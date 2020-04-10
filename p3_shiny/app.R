@@ -35,35 +35,92 @@ df_runtimes = read.csv('data/runtimes.csv')
 ########################## DATA NEEDED FOR PLOTTING #####################################
 ########################## DATA NEEDED FOR PLOTTING #####################################
 
+# get a count/distributions of the following
+by_year <- df_movies %>% group_by(year) %>% summarize(count = n())
+by_month <- df_releases %>% group_by(month) %>% summarize(count = n())
+by_runtime <- df_runtimes %>% group_by(runtime) %>% summarize(count = n())
+by_genre <- df_genres %>% group_by(genre) %>% summarize(count = n())
+by_keywords <- df_keywords %>% group_by(keyword) %>% summarize(count = n())
+by_certificates <- df_certificates %>% group_by(rating) %>% summarize(count = n())
 
 
 ########################## DASHBOARD #####################################
 ########################## DASHBOARD #####################################
 
-ui = dashboardPage(
+ui = dashboardPage(skin = "yellow",
   
   dashboardHeader(title = "Project 3 - IMDB", titleWidth = 200),
   
   dashboardSidebar(disable = FALSE, collapsed = FALSE,
+                   
                    sidebarMenu(
                      # add space to sidebar
-                     menuItem("", tabName = "cheapBlankSpace", icon = NULL),
-                     menuItem("", tabName = "cheapBlankSpace", icon = NULL),
-                     menuItem("", tabName = "cheapBlankSpace", icon = NULL),
-                     menuItem("", tabName = "cheapBlankSpace", icon = NULL),
-                     menuItem("", tabName = "cheapBlankSpace", icon = NULL),
                      menuItem("", tabName = "cheapBlankSpace", icon = NULL),
                      menuItem("", tabName = "cheapBlankSpace", icon = NULL),
                      menuItem("", tabName = "cheapBlankSpace", icon = NULL)),
                    
                    # about button
-                   actionButton("about_info", "About", width = 200)
+                   actionButton("about_info", "About", width = 200),
+                   
+                   sidebarMenu(
+                     menuItem("", tabName = "cheapBlankSpace", icon = NULL),
+                     menuItem("", tabName = "cheapBlankSpace", icon = NULL),
+                     menuItem("Make Selections:", tabName = "cheapBlankSpace", icon = NULL)),
+                   
+                   # year input
+                   sliderInput(inputId = "input_year",
+                               label = "Select a Year:",
+                               min = 1874, max = 2115, value = 2017, sep = ""),
+                   
+                   # decade input
+                   sliderInput(inputId = "input_decade",
+                               label = "Select a Decade:",
+                               min = 1870, max = 2120, value = 2010, step = 10, sep = "", post = "s"),
+                   
+                   sidebarMenu(
+                     menuItem("", tabName = "cheapBlankSpace", icon = NULL),
+                     menuItem("", tabName = "cheapBlankSpace", icon = NULL)),
+                   
+                   # top N input
+                   numericInput(inputId = "input_top_n",
+                                label = "Select Top N:",
+                                min = 10, max = 32370, value = 10),
+                   
+                   # keyword input
+                   textInput(inputId = "input_keyword", 
+                             label = "Select a Keyword:", 
+                             value = "", placeholder = "comma separate for more"),
+                   
+                   sidebarMenu(
+                     menuItem("* leave blank for all keywords", tabName = "cheapBlankSpace", icon = NULL),
+                     menuItem("", tabName = "cheapBlankSpace", icon = NULL),
+                     menuItem("", tabName = "cheapBlankSpace", icon = NULL)),
+                   
+                   # genre input
+                   selectInput(inputId = "input_genre",
+                               label = "Select a Genre:",
+                               choices = c("All genres", by_genre[1])),
+                   
+                   # certificate input
+                   selectInput(inputId = "input_certificate",
+                               label = "Select a Certificate:",
+                               choices = c("All certificates", by_certificates[1])),
+                   
+                   sidebarMenu(
+                     menuItem("", tabName = "cheapBlankSpace", icon = NULL),
+                     menuItem("", tabName = "cheapBlankSpace", icon = NULL)),
+                   
+                   # decade runtime
+                   sliderInput(inputId = "input_runtime",
+                               label = "Select a Runtime:",
+                               min = 60, max = 500, value = c(60, 120), step = 30, post = " minutes"),
+                   checkboxInput(inputId = "input_runtime_long", label = "Include movies over 500 minutes long?", value = FALSE)
                    
   ), # end sidebarMenu
   
   dashboardBody(
     column(4, 
-           box(title = "Distribution of Films", width = 12, height = 800, status = "info",
+           box(title = "Distribution of Films", width = 12, height = 800, status = "info", color = "yellow",
                
                tabsetPanel(
                  tabPanel("by Year",
@@ -132,15 +189,18 @@ ui = dashboardPage(
             )
            
         ),
-    column(4,
+    column(5,
            fluidRow(
-             infoBoxOutput("info_year"),
+             infoBoxOutput("info_year")
            ),
            fluidRow(
              infoBoxOutput("info_month")
            ),
            fluidRow(
              infoBoxOutput("info_runtime")
+           ),
+           fluidRow(
+             infoBoxOutput("info_total")
            )
     )
     
@@ -168,16 +228,12 @@ server = function(input, output, session) {
   names(all_years)[2] <- "count"
   all_years$year <- c(1874:2115)
   
-  # make dataframe of available years and their frequency
-  by_year <- df_movies %>% group_by(year) %>% summarize(count = n())
-  
   # join the counts into the full range of years dataframe
   by_year <- full_join(all_years, by_year, by = "year")
   by_year[is.na(by_year)] <- 0
   by_year$count.x <- NULL
   names(by_year)[2] <- "count"
   
-  # store some variables
   total_films = as.numeric(sum(by_year$count))
   unique_years = as.numeric(count(by_year))
   
@@ -188,15 +244,11 @@ server = function(input, output, session) {
   })
   
   ### COUNT OF FILMS BY MONTH BELOW
-  
-  # get a count of movies from each month
-  by_month <- df_releases %>% group_by(month) %>% summarize(count = n())
-  
+
   # reorder months to be in order
   by_month$month <- factor(by_month$month, levels = c("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"))
   by_month <- by_month[order(by_month$month), ]
   
-  # store a variable
   unique_months = as.numeric(count(by_month))
   
   output$tbl_month <- DT::renderDataTable({
@@ -213,16 +265,12 @@ server = function(input, output, session) {
   names(all_runtimes)[2] <- "count"
   all_runtimes$runtime <- c(60:125156)
   
-  # make dataframe of available runtimes and their frequency
-  by_runtime <- df_runtimes %>% group_by(runtime) %>% summarize(count = n())
-  
   # join the counts into the full range of years dataframe
   by_runtime <- full_join(all_runtimes, by_runtime, by = "runtime")
   by_runtime[is.na(by_runtime)] <- 0
   by_runtime$count.x <- NULL
   names(by_runtime)[2] <- "count"
   
-  # store a variable
   unique_runtimes = as.numeric(count(by_runtime))
   
   output$tbl_runtime <- DT::renderDataTable({
@@ -232,39 +280,24 @@ server = function(input, output, session) {
   })
 
   ### DISTRIBUTION OF CERTIFICATES BELOW
-  
-  # get a distribution of certificate
-  by_certificates <- df_certificates %>% group_by(rating) %>% summarize(count = n())
-  
-  # store a variable
   unique_certificates = as.numeric(count(by_certificates))
   
   output$tbl_certificates <- DT::renderDataTable({
-    DT::datatable(by_certificates, options = list(dom = 't, i', pageLength = 13), rownames = FALSE) %>%
+    DT::datatable(by_certificates, options = list(dom = 't, i', pageLength = 13, order = list(list(1, 'desc'))), rownames = FALSE) %>%
       DT::formatStyle("rating", fontSize = "125%") %>%
       DT::formatStyle("count", fontSize = "125%")
   })
   
   ### DISTRIBUTION OF KEYWORDS BELOW
-  
-  # get a distribution of top n keywords
-  by_keywords <- df_keywords %>% group_by(keyword) %>% summarize(count = n())
-  
-  # store a variable
   unique_keywords = as.numeric(count(by_keywords))
   
   output$tbl_keywords <- DT::renderDataTable({
-    DT::datatable(top_n(by_keywords, 10), options = list(dom = 'f, t, i, p, r', pageLength = 13), rownames = FALSE) %>%
+    DT::datatable(top_n(by_keywords, input$input_top_n), options = list(dom = 'f, t, i, p, r', pageLength = 13, order = list(list(1, 'desc'))), rownames = FALSE) %>%
       DT::formatStyle("keyword", fontSize = "125%") %>%
       DT::formatStyle("count", fontSize = "125%")
   })
   
   ### DISTRIBUTION OF GENRES BELOW
-  
-  # get a distribution of genres
-  by_genre <- df_genres %>% group_by(genre) %>% summarize(count = n())
-  
-  # store a variable
   unique_genres = as.numeric(count(by_genre))
   
   output$tbl_genres <- DT::renderDataTable({
@@ -276,12 +309,12 @@ server = function(input, output, session) {
   ### AVERAGES OF FILMS PER YEAR, MONTH, AND RUNTIME
   
   # average fims per year: sum of films divided by total years observed
-  avg_per_year = total_films / unique_years
+  avg_per_year = formatC(as.numeric(total_films / unique_years), format = "f", big.mark = ",", digits = 0)
   
   output$info_year <- renderInfoBox({
     infoBox(
-      "Average/Year:", paste0(trunc(avg_per_year), " films"), icon = icon("fas fa-film"),
-      color = "blue", fill = TRUE
+      "Average/Year:", paste0(avg_per_year, " films"), icon = icon("fas fa-calendar"),
+      color = "blue", fill = FALSE
     )
   })
   
@@ -289,22 +322,33 @@ server = function(input, output, session) {
   avg_by_month <- by_month
   avg_by_month$count <- by_month$count / unique_years
   names(avg_by_month)[2] <- "average"
-  avg_per_month = as.numeric(sum(avg_by_month$average) / unique_months)
+  avg_per_month = formatC(as.numeric(sum(avg_by_month$average) / unique_months), format = "f", big.mark = ",", digits = 0)
   
   output$info_month <- renderInfoBox({
     infoBox(
-      "Average/Month:", paste0(trunc(avg_per_month), " films"), icon = icon("far fa-calendar"),
-      color = "green", fill = TRUE
+      "Average/Month:", paste0(avg_per_month, " films"), icon = icon("far fa-calendar"),
+      color = "green", fill = FALSE
+    )
+  })
+  
+  # average runtime: sum of each runtime divided by total runtime observations
+  avg_runtime = formatC(as.numeric(mean(df_runtimes$runtime)), format = "f", big.mark = ",", digits = 0)
+  
+  output$info_runtime <- renderInfoBox({
+    infoBox(
+      "Average Runtime:", paste0(avg_runtime, " minutes"), icon = icon("fas fa-hourglass-half"),
+      color = "red", fill = FALSE
     )
   })
   
   
-  # average runtime: sum of each runtime divided by total runtime observations
-  avg_runtime = mean(df_runtimes$runtime)
+  ### TOTAL FILMS FOR CURRENT FILTERS
   
-  output$info_runtime <- renderInfoBox({
+  total_films = formatC(as.numeric(count(df_movies)), format = "f", big.mark = ",", digits = 0)
+  
+  output$info_total <- renderInfoBox({
     infoBox(
-      "Average Runtime:", paste0(trunc(avg_runtime), " minutes"), icon = icon("fas fa-hourglass-half"),
+      "Total:", paste0(total_films, " films"), icon = icon("fas fa-film"),
       color = "yellow", fill = TRUE
     )
   })

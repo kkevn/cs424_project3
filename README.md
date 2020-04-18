@@ -38,7 +38,7 @@ More information can be found at the following project link: < project page here
 4. Select the top cell of the notebook file and click the Run button
 5. Observe outputs from each cell and continue to click run for each cell
 
-For a clean copy of the base files, download the following files from: ftp://ftp.fu-berlin.de/pub/misc/movies/database/frozendata/
+For a clean copy of the base files, download the following files from: [ftp://ftp.fu-berlin.de/pub/misc/movies/database/frozendata/](ftp://ftp.fu-berlin.de/pub/misc/movies/database/frozendata/)
 * release-dates.list
 * running-times.list
 * certificates.list

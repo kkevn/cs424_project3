@@ -21,13 +21,28 @@ More information can be found at the following project link: < project page here
 7. If RStudio prompts you for a Shiny account, make and connect one using [this tutorial](https://shiny.rstudio.com/tutorial/)
 8. The visualization should be up and running and ready to be used
 
-## Jupiter Notebook Code Instructions:
+## Jupiter Notebook Code Instructions (Python):
 
-1. Load the included '.ipynb' file into Jupyter Notebook ([using Anaconda with an R environment](https://docs.anaconda.com/anaconda/navigator/tutorials/r-lang/))
-2. Ensure that the `data.txt` file is in the same directory as the notebook file
+1. Load the included '.ipynb' file labeled with `python` into Jupyter Notebook using Anaconda with the default Python environment
+2. Extract each of the downloaded files from their archives
+3. Ensure that the `.list` files are in a `\data_files\old_files\` directory from the root of the notebook file
+4. Install the necessary packages 
+5. Select the top cell of the notebook file and click the Run button
+6. Observe outputs from each cell and continue to click run for each cell
+
+## Jupiter Notebook Code Instructions (R):
+
+1. Load the included '.ipynb' file *not* labeled with `python` into Jupyter Notebook ([using Anaconda with an R environment](https://docs.anaconda.com/anaconda/navigator/tutorials/r-lang/))
+2. Ensure that the `.csv` files are present in the `\data_files\new_files\` directory from the root of the notebook file
 3. Install the necessary packages 
 4. Select the top cell of the notebook file and click the Run button
 5. Observe outputs from each cell and continue to click run for each cell
 
-For a clean copy of `data.txt`, download from: 
-* ???
+For a clean copy of the base files, download the following files from: ftp://ftp.fu-berlin.de/pub/misc/movies/database/frozendata/
+* release-dates.list
+* running-times.list
+* certificates.list
+* genres.list
+* keywords.list
+* movies.list
+* ratings.list

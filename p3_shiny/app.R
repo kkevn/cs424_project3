@@ -95,7 +95,6 @@ ui = dashboardPage(skin = "yellow",
                    
                    sidebarMenu(
                      # add space to sidebar
-                     menuItem("", tabName = "cheapBlankSpace", icon = NULL),
                      menuItem("", tabName = "cheapBlankSpace", icon = NULL)),
                    
                    # about button
@@ -175,7 +174,7 @@ ui = dashboardPage(skin = "yellow",
     '))),
     
     column(4,
-           box(title = "Overall Distribution of Films", width = 12, height = 800, solidHeader = TRUE, status = "warning", color = "yellow",
+           box(title = "Overall Distribution of Films", width = 12, height = 850, solidHeader = TRUE, status = "warning", color = "yellow",
 
                tabsetPanel(
                  tabPanel("by Year",
@@ -261,7 +260,7 @@ ui = dashboardPage(skin = "yellow",
            )
     ),
     column(4,
-           box(title = "Distribution of Films by Selected Genre(s)", width = 12, height = 800, solidHeader = TRUE, status = "warning", color = "yellow",
+           box(title = "Distribution of Films by Selected Genre(s)", width = 12, height = 850, solidHeader = TRUE, status = "warning", color = "yellow",
 
                tabsetPanel(
                  tabPanel("by Year",

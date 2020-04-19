@@ -20,29 +20,70 @@ library(readr)
 library(shiny)
 library(shinydashboard)
 library(stringr)
+library(tidyverse)
 
 # retrieve helper functions
-#source("helper.R")
+source("helper.R")
 
-# read in the processed data
-df_certificates = read.csv('data/certificates.csv')
-df_genres = read.csv('data/genres.csv')
-df_keywords = read.csv('data/keywords.csv')
-df_movies = read.csv('data/movies.csv')
-df_releases = read.csv('data/releases.csv')
-df_runtimes = read.csv('data/runtimes.csv')
+# read in the processed RDS file and subsetted keywords CSV
+data <- readRDS(file = "combined_data.rds")
+keywords_subset = read.csv('keywords_subset.csv')
 
 ########################## DATA NEEDED FOR PLOTTING #####################################
 ########################## DATA NEEDED FOR PLOTTING #####################################
 
-# get a count/distributions of the following
-by_year <- df_movies %>% group_by(year) %>% summarize(count = n())
-by_month <- df_releases %>% group_by(month) %>% summarize(count = n())
-by_runtime <- df_runtimes %>% group_by(runtime) %>% summarize(count = n())
-by_genre <- df_genres %>% group_by(genre) %>% summarize(count = n())
-by_keywords <- df_keywords %>% group_by(keyword) %>% summarize(count = n())
-by_certificates <- df_certificates %>% group_by(rating) %>% summarize(count = n())
+# output number of entries in data
+total_data <- count(data)
+print(paste0("---- data, n=", total_data))
+unique_films <- length(unique(data$movie))
+print(paste0("---- unique movies, n=", unique_films))
 
+# get list of movies where none is duplicated (used for times where you only want to account for a movie once, such as runtime average)
+unique_movies <- subset(data, !duplicated(subset(data, select = movie)))
+
+# get min and max years
+min_year_all <- min(data$year)
+max_year_all <- max(data$year)
+print(paste0("---- years range from: ", min_year_all, "-", max_year_all))
+
+# get min and max decades
+min_decade_all <- floor(min(data$year) / 10) * 10
+max_decade_all <- floor(max(data$year) / 10) * 10
+print(paste0("---- decades range from: ", min_decade_all, "-", max_decade_all))
+
+# get min and max runtimes
+min_runtime_all <- min(data$runtime)
+max_runtime_all <- max(data$runtime)
+print(paste0("---- runtimes range from: ", min_runtime_all, "-", max_runtime_all, " minutes"))
+
+# NOT NEEDED I GUESS
+# load upper and lower limit variables into helper file
+#load_data(min_year_all, max_year_all, min_decade_all, max_decade_all, min_runtime_all, max_runtime_all)
+
+# get a count of movies & distribution of things for the entire data (of just unique movies)
+by_year <- number_films_per_year(unique_movies)
+#by_decade <- number_films_per_decade(unique_movies) # takes a minute to calculate decades
+by_month <- number_films_per_month(unique_movies)
+by_runtime <- distribution_of_runtimes(unique_movies)
+by_certificates <- distribution_of_certificates(unique_movies)
+by_genre <- distribution_of_genres(unique_movies)
+n = 10
+by_keywords <- distribution_of_keywords(keywords_subset, n)
+
+# get the averages for films per year, month, and runtime of entire (unique) data
+unique_years = as.numeric(count(by_year))
+avg_per_year = trunc(unique_films / unique_years)
+print(paste0("---- avg films per year= ", avg_per_year))
+
+unique_months = as.numeric(count(by_month))
+avg_by_month <- by_month
+avg_by_month$count <- by_month$count / unique_years
+names(avg_by_month)[2] <- "average"
+avg_per_month = trunc(as.numeric(sum(avg_by_month$average) / unique_months))
+print(paste0("---- avg films per month= ", avg_per_month))
+
+avg_runtime = trunc(mean(unique_movies$runtime))
+print(paste0("---- avg runtime= ", avg_runtime))
 
 ########################## DASHBOARD #####################################
 ########################## DASHBOARD #####################################
@@ -66,62 +107,82 @@ ui = dashboardPage(skin = "yellow",
                      menuItem("", tabName = "cheapBlankSpace", icon = NULL),
                      menuItem("", tabName = "cheapBlankSpace", icon = NULL),
                      menuItem("Make Selections:", tabName = "cheapBlankSpace", icon = NULL)),
-                   
+
                    # year input
                    sliderInput(inputId = "input_year",
                                label = "Select a Year:",
-                               min = 1874, max = 2115, value = 2017, sep = ""),
-                   
+                               min = min_year_all, max = max_year_all, value = max_year_all, sep = ""),
+
                    # decade input
                    sliderInput(inputId = "input_decade",
                                label = "Select a Decade:",
-                               min = 1870, max = 2120, value = 2010, step = 10, sep = "", post = "s"),
-                   
+                               min = min_decade_all, max = max_decade_all, value = max_decade_all, step = 10, sep = "", post = "s"),
+
                    sidebarMenu(
                      menuItem("", tabName = "cheapBlankSpace", icon = NULL),
                      menuItem("", tabName = "cheapBlankSpace", icon = NULL)),
-                   
+
                    # top N input
                    numericInput(inputId = "input_top_n",
                                 label = "Select Top N:",
-                                min = 10, max = 32370, value = 10),
-                   
+                                min = 10, max = 56048, value = 10),
+
                    # keyword input
-                   textInput(inputId = "input_keyword", 
-                             label = "Select a Keyword:", 
+                   textInput(inputId = "input_keyword",
+                             label = "Select a Keyword:",
                              value = "", placeholder = "comma separate for more"),
-                   
+
                    sidebarMenu(
                      menuItem("* leave blank for all keywords", tabName = "cheapBlankSpace", icon = NULL),
                      menuItem("", tabName = "cheapBlankSpace", icon = NULL),
                      menuItem("", tabName = "cheapBlankSpace", icon = NULL)),
-                   
+
                    # genre input
                    selectInput(inputId = "input_genre",
                                label = "Select a Genre:",
                                choices = c("All genres", by_genre[1])),
-                   
+
                    # certificate input
                    selectInput(inputId = "input_certificate",
                                label = "Select a Certificate:",
                                choices = c("All certificates", by_certificates[1])),
-                   
+
                    sidebarMenu(
                      menuItem("", tabName = "cheapBlankSpace", icon = NULL),
                      menuItem("", tabName = "cheapBlankSpace", icon = NULL)),
-                   
-                   # decade runtime
+
+                   # runtime input
                    sliderInput(inputId = "input_runtime",
                                label = "Select a Runtime:",
-                               min = 60, max = 500, value = c(60, 120), step = 30, post = " minutes"),
-                   checkboxInput(inputId = "input_runtime_long", label = "Include movies over 500 minutes long?", value = FALSE)
+                               min = min_runtime_all, max = max_runtime_all, value = c(60, 120), step = 30, post = " minutes")
                    
   ), # end sidebarMenu
   
   dashboardBody(
-    column(4, 
-           box(title = "Distribution of Films", width = 12, height = 800, status = "info", color = "yellow",
-               
+    
+    # makes gray background
+    tags$head(tags$style(HTML('
+                                /* logo */
+                                .skin-blue .main-header .logo {
+                                  background-color: #202020;
+                                }
+                                
+                                .skin-blue .main-header .navbar {
+                                  background-color: #202020;
+                                }
+                                             
+                                .skin-blue .main-sidebar {
+                                  background-color: #202020;
+                                }
+                                
+                                .content-wrapper, .right-side {
+                                  background-color: #202020;
+                                }
+    '))),
+    
+    column(4,
+           box(title = "Overall Distribution of Films", width = 12, height = 800, solidHeader = TRUE, status = "warning", color = "yellow",
+
                tabsetPanel(
                  tabPanel("by Year",
                           tabsetPanel(
@@ -183,27 +244,128 @@ ui = dashboardPage(skin = "yellow",
                             )
                           ) #Close inner tabsetPanel
                  )
-               
-               
+
+
                )
             )
-           
+
         ),
-    column(5,
-           fluidRow(
-             infoBoxOutput("info_year")
-           ),
-           fluidRow(
-             infoBoxOutput("info_month")
-           ),
-           fluidRow(
-             infoBoxOutput("info_runtime")
-           ),
-           fluidRow(
-             infoBoxOutput("info_total")
-           )
-    )
     
+    # sizing is weird on these boxes
+    column(4, 
+           fluidRow(
+             infoBoxOutput("info_year", width = 5)
+           ),
+           fluidRow(
+             infoBoxOutput("info_month", width = 5)
+           ),
+           fluidRow(
+             infoBoxOutput("info_runtime", width = 5)
+           ),
+           fluidRow(
+             infoBoxOutput("info_total", width = 5)
+           )
+    ),
+    column(4,
+           box(title = "Distribution of Films by Selected Genre(s)", width = 12, height = 800, solidHeader = TRUE, status = "warning", color = "yellow",
+
+               tabsetPanel(
+                 tabPanel("by Year",
+                          tabsetPanel(
+                            tabPanel("Bar Plot",
+                                     tabPanel("Bar Plot", h1("bar plot here"))
+                            ),
+                            tabPanel("Tabular Format",
+                                     tabPanel("Tabular Format", h1("table here"))
+                            )
+                          ) #Close inner tabsetPanel
+                 ),
+                 tabPanel("by Decade",
+                          tabsetPanel(
+                            tabPanel("Bar Plot",
+                                     tabPanel("Bar Plot", h1("bar plot here"))
+                            ),
+                            tabPanel("Tabular Format",
+                                     tabPanel("Tabular Format", h1("table here"))
+                            )
+                          ) #Close inner tabsetPanel
+                 ),
+                 tabPanel("by Month",
+                          tabsetPanel(
+                            tabPanel("Bar Plot",
+                                     tabPanel("Bar Plot", h1("bar plot here"))
+                            ),
+                            tabPanel("Tabular Format",
+                                     tabPanel("Tabular Format", h1("table here"))
+                            )
+                          ) #Close inner tabsetPanel
+                 ),
+                 tabPanel("by Year %",
+                          tabsetPanel(
+                            tabPanel("Bar Plot",
+                                     tabPanel("Bar Plot", h1("bar plot here"))
+                            ),
+                            tabPanel("Tabular Format",
+                                     tabPanel("Tabular Format", h1("table here"))
+                            )
+                          ) #Close inner tabsetPanel
+                 ),
+                 tabPanel("by Decade %",
+                          tabsetPanel(
+                            tabPanel("Bar Plot",
+                                     tabPanel("Bar Plot", h1("bar plot here"))
+                            ),
+                            tabPanel("Tabular Format",
+                                     tabPanel("Tabular Format", h1("table here"))
+                            )
+                          ) #Close inner tabsetPanel
+                 ),
+                 tabPanel("by Month %",
+                          tabsetPanel(
+                            tabPanel("Bar Plot",
+                                     tabPanel("Bar Plot", h1("bar plot here"))
+                            ),
+                            tabPanel("Tabular Format",
+                                     tabPanel("Tabular Format", h1("table here"))
+                            )
+                          ) #Close inner tabsetPanel
+                 ),
+                 tabPanel("by Runtime",
+                          tabsetPanel(
+                            tabPanel("Bar Plot",
+                                     tabPanel("Bar Plot", h1("bar plot here"))
+                            ),
+                            tabPanel("Tabular Format",
+                                     tabPanel("Tabular Format", h1("table here"))
+                            )
+                          ) #Close inner tabsetPanel
+                 ),
+                 tabPanel("by Certification",
+                          tabsetPanel(
+                            tabPanel("Bar Plot",
+                                     tabPanel("Bar Plot", h1("bar plot here"))
+                            ),
+                            tabPanel("Tabular Format",
+                                     tabPanel("Tabular Format", h1("table here"))
+                            )
+                          ) #Close inner tabsetPanel
+                 ),
+                 tabPanel("by Top N Keywords",
+                          tabsetPanel(
+                            tabPanel("Bar Plot",
+                                     tabPanel("Bar Plot", h1("bar plot here"))
+                            ),
+                            tabPanel("Tabular Format",
+                                     tabPanel("Tabular Format", h1("table here"))
+                            )
+                          ) #Close inner tabsetPanel
+                 )
+
+
+               )
+           )
+
+    ),
     
   ) # end dashboardBody
 )# end dashboardPage
@@ -221,58 +383,22 @@ server = function(input, output, session) {
   }) # end about info 
   
   ### COUNT OF FILMS BY YEAR BELOW
-  
-  # create empty dataframe of all years in range 1874-2115
-  all_years <- data.frame(formatC(1874:2115, width = 2), 0)
-  names(all_years)[1] <- "year"
-  names(all_years)[2] <- "count"
-  all_years$year <- c(1874:2115)
-  
-  # join the counts into the full range of years dataframe
-  by_year <- full_join(all_years, by_year, by = "year")
-  by_year[is.na(by_year)] <- 0
-  by_year$count.x <- NULL
-  names(by_year)[2] <- "count"
-  
-  total_films = as.numeric(sum(by_year$count))
-  unique_years = as.numeric(count(by_year))
-  
   output$tbl_year <- DT::renderDataTable({
     DT::datatable(by_year, options = list(dom = 'f, t, i, p, r', pageLength = 13), rownames = FALSE) %>%
       DT::formatStyle("year", fontSize = "125%") %>%
       DT::formatStyle("count", fontSize = "125%")
   })
-  
-  ### COUNT OF FILMS BY MONTH BELOW
 
-  # reorder months to be in order
-  by_month$month <- factor(by_month$month, levels = c("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"))
-  by_month <- by_month[order(by_month$month), ]
-  
-  unique_months = as.numeric(count(by_month))
-  
+  ### COUNT OF FILMS BY MONTH BELOW
   output$tbl_month <- DT::renderDataTable({
     DT::datatable(by_month, options = list(dom = 't, i', pageLength = 13), rownames = FALSE) %>%
       DT::formatStyle("month", fontSize = "125%") %>%
       DT::formatStyle("count", fontSize = "125%")
   })
-  
+
   ### DISTRIBUTION OF RUNTIMES BELOW
-  
-  # create empty dataframe of all runtimes in range 60-125156
-  all_runtimes <- data.frame(formatC(60:125156, width = 2), 0)
-  names(all_runtimes)[1] <- "runtime"
-  names(all_runtimes)[2] <- "count"
-  all_runtimes$runtime <- c(60:125156)
-  
-  # join the counts into the full range of years dataframe
-  by_runtime <- full_join(all_runtimes, by_runtime, by = "runtime")
-  by_runtime[is.na(by_runtime)] <- 0
-  by_runtime$count.x <- NULL
-  names(by_runtime)[2] <- "count"
-  
   unique_runtimes = as.numeric(count(by_runtime))
-  
+
   output$tbl_runtime <- DT::renderDataTable({
     DT::datatable(by_runtime, options = list(dom = 'f, t, i, p, r', pageLength = 13), rownames = FALSE) %>%
       DT::formatStyle("runtime", fontSize = "125%") %>%
@@ -281,25 +407,26 @@ server = function(input, output, session) {
 
   ### DISTRIBUTION OF CERTIFICATES BELOW
   unique_certificates = as.numeric(count(by_certificates))
-  
+
   output$tbl_certificates <- DT::renderDataTable({
     DT::datatable(by_certificates, options = list(dom = 't, i', pageLength = 13, order = list(list(1, 'desc'))), rownames = FALSE) %>%
       DT::formatStyle("rating", fontSize = "125%") %>%
       DT::formatStyle("count", fontSize = "125%")
   })
-  
+
   ### DISTRIBUTION OF KEYWORDS BELOW
+  #by_keywords <- distribution_of_keywords(keywords_subset, 10) # REPLACE 10 WITH REACTIVE OF input$input_top_n
   unique_keywords = as.numeric(count(by_keywords))
-  
+
   output$tbl_keywords <- DT::renderDataTable({
-    DT::datatable(top_n(by_keywords, input$input_top_n), options = list(dom = 'f, t, i, p, r', pageLength = 13, order = list(list(1, 'desc'))), rownames = FALSE) %>%
+    DT::datatable(by_keywords, options = list(dom = 'f, t, i, p, r', pageLength = 13), rownames = FALSE) %>%
       DT::formatStyle("keyword", fontSize = "125%") %>%
       DT::formatStyle("count", fontSize = "125%")
   })
-  
+
   ### DISTRIBUTION OF GENRES BELOW
   unique_genres = as.numeric(count(by_genre))
-  
+
   output$tbl_genres <- DT::renderDataTable({
     DT::datatable(by_genre, options = list(dom = 'f, t, i, p, r', pageLength = 13), rownames = FALSE) %>%
       DT::formatStyle("genre", fontSize = "125%") %>%
@@ -308,9 +435,6 @@ server = function(input, output, session) {
   
   ### AVERAGES OF FILMS PER YEAR, MONTH, AND RUNTIME
   
-  # average fims per year: sum of films divided by total years observed
-  avg_per_year = formatC(as.numeric(total_films / unique_years), format = "f", big.mark = ",", digits = 0)
-  
   output$info_year <- renderInfoBox({
     infoBox(
       "Average/Year:", paste0(avg_per_year, " films"), icon = icon("fas fa-calendar"),
@@ -318,41 +442,33 @@ server = function(input, output, session) {
     )
   })
   
-  # average films per month: sum of films each month, each sum divided by total years observed; then average these results
-  avg_by_month <- by_month
-  avg_by_month$count <- by_month$count / unique_years
-  names(avg_by_month)[2] <- "average"
-  avg_per_month = formatC(as.numeric(sum(avg_by_month$average) / unique_months), format = "f", big.mark = ",", digits = 0)
-  
   output$info_month <- renderInfoBox({
     infoBox(
       "Average/Month:", paste0(avg_per_month, " films"), icon = icon("far fa-calendar"),
       color = "green", fill = FALSE
     )
   })
-  
-  # average runtime: sum of each runtime divided by total runtime observations
-  avg_runtime = formatC(as.numeric(mean(df_runtimes$runtime)), format = "f", big.mark = ",", digits = 0)
-  
+
   output$info_runtime <- renderInfoBox({
     infoBox(
       "Average Runtime:", paste0(avg_runtime, " minutes"), icon = icon("fas fa-hourglass-half"),
       color = "red", fill = FALSE
     )
   })
-  
-  
-  ### TOTAL FILMS FOR CURRENT FILTERS
-  
-  total_films = formatC(as.numeric(count(df_movies)), format = "f", big.mark = ",", digits = 0)
-  
+
+  ### TOTAL FILMS FOR CURRENT FILTERS (shows just overall data count now)
   output$info_total <- renderInfoBox({
     infoBox(
-      "Total:", paste0(total_films, " films"), icon = icon("fas fa-film"),
+      "Total:", paste0(unique_films, " films"), icon = icon("fas fa-film"),
       color = "yellow", fill = TRUE
     )
   })
   
+  ##
+  ##
+  ## B REQUIREMENTS BELOW
+  ##
+  ##
 }
 
 shinyApp(ui=ui, server=server)

@@ -1,21 +1,20 @@
-# NOT NEEDED I GUESS, IT'S SOMEHOW GETTING THESE FROM app.R
-# # initialize upper and lower limit variables
-# min_year_all = 0
-# max_year_all = 0
-# min_decade_all = 0
-# max_decade_all = 0
-# min_runtime_all = 0
-# max_runtime_all = 0
-# 
-# # read in the upper and lower limit variables from app.R
-# load_data = function(min_ya, max_ya, min_da, max_da, min_ra, max_ra) {
-#     min_year_all = min_ya
-#     max_year_all = max_ya
-#     min_decade_all = min_da
-#     max_decade_all = max_da
-#     min_runtime_all = min_ra
-#     max_runtime_all = max_ra
-# }
+# initialize upper and lower limit variables
+min_year_all = 0
+max_year_all = 0
+min_decade_all = 0
+max_decade_all = 0
+min_runtime_all = 0
+max_runtime_all = 0
+
+# read in the upper and lower limit variables from app.R
+load_data = function(min_ya, max_ya, min_da, max_da, min_ra, max_ra) {
+    min_year_all = min_ya
+    max_year_all = max_ya
+    min_decade_all = min_da
+    max_decade_all = max_da
+    min_runtime_all = min_ra
+    max_runtime_all = max_ra
+}
 
 ########################## FUNCTIONS FOR COUNT/DISTRIBUTION TABLES BELOW #####################################
 ########################## FUNCTIONS FOR COUNT/DISTRIBUTION TABLES BELOW #####################################

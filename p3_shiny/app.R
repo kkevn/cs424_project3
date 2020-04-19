@@ -56,9 +56,8 @@ min_runtime_all <- min(data$runtime)
 max_runtime_all <- max(data$runtime)
 print(paste0("---- runtimes range from: ", min_runtime_all, "-", max_runtime_all, " minutes"))
 
-# NOT NEEDED I GUESS
 # load upper and lower limit variables into helper file
-#load_data(min_year_all, max_year_all, min_decade_all, max_decade_all, min_runtime_all, max_runtime_all)
+load_data(min_year_all, max_year_all, min_decade_all, max_decade_all, min_runtime_all, max_runtime_all)
 
 # get a count of movies & distribution of things for the entire data (of just unique movies)
 by_year <- number_films_per_year(unique_movies)

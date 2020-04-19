@@ -103,7 +103,6 @@ ui = dashboardPage(skin = "yellow",
                    
                    sidebarMenu(
                      menuItem("", tabName = "cheapBlankSpace", icon = NULL),
-                     menuItem("", tabName = "cheapBlankSpace", icon = NULL),
                      menuItem("Make Selections:", tabName = "cheapBlankSpace", icon = NULL)),
 
                    # year input

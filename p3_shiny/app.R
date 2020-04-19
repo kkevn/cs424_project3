@@ -96,7 +96,6 @@ ui = dashboardPage(skin = "yellow",
                    sidebarMenu(
                      # add space to sidebar
                      menuItem("", tabName = "cheapBlankSpace", icon = NULL),
-                     menuItem("", tabName = "cheapBlankSpace", icon = NULL),
                      menuItem("", tabName = "cheapBlankSpace", icon = NULL)),
                    
                    # about button
@@ -118,7 +117,6 @@ ui = dashboardPage(skin = "yellow",
                                min = min_decade_all, max = max_decade_all, value = max_decade_all, step = 10, sep = "", post = "s"),
 
                    sidebarMenu(
-                     menuItem("", tabName = "cheapBlankSpace", icon = NULL),
                      menuItem("", tabName = "cheapBlankSpace", icon = NULL)),
 
                    # top N input
@@ -133,7 +131,6 @@ ui = dashboardPage(skin = "yellow",
 
                    sidebarMenu(
                      menuItem("* leave blank for all keywords", tabName = "cheapBlankSpace", icon = NULL),
-                     menuItem("", tabName = "cheapBlankSpace", icon = NULL),
                      menuItem("", tabName = "cheapBlankSpace", icon = NULL)),
 
                    # genre input
@@ -147,7 +144,6 @@ ui = dashboardPage(skin = "yellow",
                                choices = c("All certificates", by_certificates[1])),
 
                    sidebarMenu(
-                     menuItem("", tabName = "cheapBlankSpace", icon = NULL),
                      menuItem("", tabName = "cheapBlankSpace", icon = NULL)),
 
                    # runtime input
@@ -383,14 +379,14 @@ server = function(input, output, session) {
   
   ### COUNT OF FILMS BY YEAR BELOW
   output$tbl_year <- DT::renderDataTable({
-    DT::datatable(by_year, options = list(dom = 'f, t, i, p, r', pageLength = 13), rownames = FALSE) %>%
+    DT::datatable(by_year, options = list(dom = 'f, t, i, p, r', pageLength = 12), rownames = FALSE) %>%
       DT::formatStyle("year", fontSize = "125%") %>%
       DT::formatStyle("count", fontSize = "125%")
   })
 
   ### COUNT OF FILMS BY MONTH BELOW
   output$tbl_month <- DT::renderDataTable({
-    DT::datatable(by_month, options = list(dom = 't, i', pageLength = 13), rownames = FALSE) %>%
+    DT::datatable(by_month, options = list(dom = 't, i', pageLength = 12), rownames = FALSE) %>%
       DT::formatStyle("month", fontSize = "125%") %>%
       DT::formatStyle("count", fontSize = "125%")
   })
@@ -399,7 +395,7 @@ server = function(input, output, session) {
   unique_runtimes = as.numeric(count(by_runtime))
 
   output$tbl_runtime <- DT::renderDataTable({
-    DT::datatable(by_runtime, options = list(dom = 'f, t, i, p, r', pageLength = 13), rownames = FALSE) %>%
+    DT::datatable(by_runtime, options = list(dom = 'f, t, i, p, r', pageLength = 12), rownames = FALSE) %>%
       DT::formatStyle("runtime", fontSize = "125%") %>%
       DT::formatStyle("count", fontSize = "125%")
   })
@@ -408,7 +404,7 @@ server = function(input, output, session) {
   unique_certificates = as.numeric(count(by_certificates))
 
   output$tbl_certificates <- DT::renderDataTable({
-    DT::datatable(by_certificates, options = list(dom = 't, i', pageLength = 13, order = list(list(1, 'desc'))), rownames = FALSE) %>%
+    DT::datatable(by_certificates, options = list(dom = 't, i', pageLength = 12, order = list(list(1, 'desc'))), rownames = FALSE) %>%
       DT::formatStyle("rating", fontSize = "125%") %>%
       DT::formatStyle("count", fontSize = "125%")
   })
@@ -418,7 +414,7 @@ server = function(input, output, session) {
   unique_keywords = as.numeric(count(by_keywords))
 
   output$tbl_keywords <- DT::renderDataTable({
-    DT::datatable(by_keywords, options = list(dom = 'f, t, i, p, r', pageLength = 13), rownames = FALSE) %>%
+    DT::datatable(by_keywords, options = list(dom = 'f, t, i, p, r', pageLength = 12), rownames = FALSE) %>%
       DT::formatStyle("keyword", fontSize = "125%") %>%
       DT::formatStyle("count", fontSize = "125%")
   })
@@ -427,7 +423,7 @@ server = function(input, output, session) {
   unique_genres = as.numeric(count(by_genre))
 
   output$tbl_genres <- DT::renderDataTable({
-    DT::datatable(by_genre, options = list(dom = 'f, t, i, p, r', pageLength = 13), rownames = FALSE) %>%
+    DT::datatable(by_genre, options = list(dom = 'f, t, i, p, r', pageLength = 12), rownames = FALSE) %>%
       DT::formatStyle("genre", fontSize = "125%") %>%
       DT::formatStyle("count", fontSize = "125%")
   })

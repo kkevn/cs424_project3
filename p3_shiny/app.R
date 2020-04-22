@@ -40,6 +40,7 @@ print(paste0("---- unique movies, n=", unique_films))
 
 # get list of movies where none is duplicated (used for times where you only want to account for a movie once, such as runtime average)
 unique_movies <- subset(data, !duplicated(subset(data, select = movie)))
+unique_movies_with_keywords = keywords_subset %>% left_join(unique_movies)
 
 # get min and max years
 min_year_all <- min(data$year)
@@ -180,7 +181,7 @@ ui = dashboardPage(skin = "yellow",
                  tabPanel("by Year",
                           tabsetPanel(
                             tabPanel("Bar Plot",
-                                     tabPanel("Bar Plot", h1("bar plot here"))
+                                     tabPanel("Bar Plot", plotOutput("overview_year_plot"))
                             ),
                             tabPanel("Tabular Format",
                                      tabPanel("Tabular Format", dataTableOutput("tbl_year"))
@@ -190,7 +191,7 @@ ui = dashboardPage(skin = "yellow",
                  tabPanel("by Month",
                           tabsetPanel(
                             tabPanel("Bar Plot",
-                                     tabPanel("Bar Plot", h1("bar plot here"))
+                                     tabPanel("Bar Plot", plotOutput("overview_month_plot"))
                             ),
                             tabPanel("Tabular Format",
                                      tabPanel("Tabular Format", dataTableOutput("tbl_month"))
@@ -200,7 +201,7 @@ ui = dashboardPage(skin = "yellow",
                  tabPanel("by Runtime",
                           tabsetPanel(
                             tabPanel("Bar Plot",
-                                     tabPanel("Bar Plot", h1("bar plot here"))
+                                     tabPanel("Bar Plot", plotOutput("overview_runtime_plot"))
                             ),
                             tabPanel("Tabular Format",
                                      tabPanel("Tabular Format", dataTableOutput("tbl_runtime"))
@@ -210,7 +211,7 @@ ui = dashboardPage(skin = "yellow",
                  tabPanel("by Certification",
                           tabsetPanel(
                             tabPanel("Bar Plot",
-                                     tabPanel("Bar Plot", h1("bar plot here"))
+                                     tabPanel("Bar Plot", plotOutput("overview_certificate_plot"))
                             ),
                             tabPanel("Tabular Format",
                                      tabPanel("Tabular Format", dataTableOutput("tbl_certificates"))
@@ -220,7 +221,7 @@ ui = dashboardPage(skin = "yellow",
                  tabPanel("by Genre",
                           tabsetPanel(
                             tabPanel("Bar Plot",
-                                     tabPanel("Bar Plot", h1("bar plot here"))
+                                     tabPanel("Bar Plot", plotOutput("overview_genre_plot"))
                             ),
                             tabPanel("Tabular Format",
                                      tabPanel("Tabular Format", dataTableOutput("tbl_genres"))
@@ -230,7 +231,7 @@ ui = dashboardPage(skin = "yellow",
                  tabPanel("by Top N Keywords",
                           tabsetPanel(
                             tabPanel("Bar Plot",
-                                     tabPanel("Bar Plot", h1("bar plot here"))
+                                     tabPanel("Bar Plot", plotOutput("overview_top_keywords_plot"))
                             ),
                             tabPanel("Tabular Format",
                                      tabPanel("Tabular Format", dataTableOutput("tbl_keywords"))
@@ -366,6 +367,8 @@ ui = dashboardPage(skin = "yellow",
 
 server = function(input, output, session) {
   
+    first_view = reactiveVal(TRUE)
+    
   observeEvent(input$about_info, {
     showModal(
       modalDialog(
@@ -455,6 +458,63 @@ server = function(input, output, session) {
       "Total:", paste0(unique_films, " films"), icon = icon("fas fa-film"),
       color = "yellow", fill = TRUE
     )
+  })
+  
+  ########## WHEN YEAR INPUT CHANGES #######
+  
+  observeEvent(input$input_year, {
+      if (first_view()){
+          output$overview_year_plot = renderPlot({
+              plotYearlyFilms(unique_movies)
+          })
+          
+          output$overview_month_plot= renderPlot({
+              plotMonthPerGivenYear(unique_movies, NULL)
+          })
+          
+          output$overview_runtime_plot = renderPlot({
+              plotRuntimePerGivenYear(unique_movies, NULL)
+          })
+          
+          output$overview_genre_plot = renderPlot({
+              plotGenrePerYear(unique_movies, NULL)
+          })
+          
+          output$overview_certificate_plot = renderPlot({
+              plotCertificatesPerYear(unique_movies, NULL)
+          })
+          
+          output$overview_top_keywords_plot = renderPlot({
+              plotTopKeywordsPerYear(unique_movies_with_keywords, NULL, input$input_top_n)
+          })
+          
+          first_view(FALSE)
+          
+      } else {
+          output$overview_year_plot = renderPlot({
+              plotYearlyFilms(unique_movies %>% filter(year == input$input_year))
+          })
+          
+          output$overview_month_plot= renderPlot({
+              plotMonthPerGivenYear(unique_movies, input$input_year)
+          })
+          
+          output$overview_runtime_plot = renderPlot({
+              plotRuntimePerGivenYear(unique_movies, input$input_year)
+          })
+          
+          output$overview_genre_plot = renderPlot({
+              plotGenrePerYear(unique_movies, input$input_year)
+          })
+          
+          output$overview_certificate_plot = renderPlot({
+              plotCertificatesPerYear(unique_movies, input$input_year)
+          })
+          
+          output$overview_top_keywords_plot = renderPlot({
+              plotTopKeywordsPerYear(unique_movies_with_keywords, input$input_year, input$input_top_n)
+          })
+      }
   })
   
   ##

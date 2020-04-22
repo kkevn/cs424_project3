@@ -177,6 +177,180 @@ distribution_of_keywords = function(table, n) {
 }
 
 
-########################## FUNCTIONS FOR ??? BELOW #####################################
-########################## FUNCTIONS FOR ??? BELOW #####################################
+########################## FUNCTIONS FOR PLOTS BELOW #####################################
+########################## FUNCTIONS FOR PLOTS BELOW #####################################
 
+plotYearlyFilms = function(data){
+    films_per_year= number_films_per_year(data) %>% filter(count > 0) 
+    
+    use_factor = if (nrow(films_per_year) > 1) FALSE else TRUE # to check if only single year
+    
+    ggplot(films_per_year, aes(x=if (use_factor) as.factor(year) else year, y=count)) +
+        geom_bar(stat = "identity", fill = "gray36") + 
+        labs(title = "Number of Films Per Year", x = "Year", y = "Number of Films") +
+        theme(text = element_text(size=20))
+}
+
+
+
+
+plotMonthPerGivenYear <- function(data, year)
+{
+    monthly_films_all = number_films_per_month(data)
+    
+    if (is.null(year)) # no year given, so all the data
+    { 
+        ggplot(monthly_films_all, aes(x=month, y=count)) +
+            geom_bar(stat = "identity", fill = "#f3ce13") + 
+            labs(title = "Monthly Distribution", x = "Month", y = "Number of Films") +
+            theme(text = element_text(size=20),
+                  axis.text.x = element_text(angle = 45, hjust = 1)
+            )
+    } 
+    else # year given, need to compare year with overall
+    { 
+        year_films = data[which(data$year == year),]
+        
+        monthly_films_year = number_films_per_month(year_films) %>% mutate(compare=year)
+        
+        monthly_films_all = monthly_films_all %>% mutate(compare='All')
+        
+        combined_data = rbind(monthly_films_year, monthly_films_all)
+        
+        ggplot(combined_data, aes(x=month, y=count, fill=compare)) +
+            geom_bar(stat='identity', position='dodge') + 
+            labs(title = "Monthly Distribution", x = "Month", y = "Number of Films") +
+            theme(text = element_text(size=20),
+                  axis.text.x = element_text(angle = 45, hjust = 1)
+            )
+        
+    }
+}  
+
+
+
+plotRuntimePerGivenYear <- function(data, year)
+{
+    runtime_distribution_all = distribution_of_runtimes(data)
+    
+    if (is.null(year)) # no year given, so all the data
+    { 
+        ggplot(runtime_distribution_all, aes(x=runtime, y=count)) +
+            geom_point() + labs(title = "Runtime Distribution", x = "Runtime", y = "Number of Films") +
+            theme(text = element_text(size=20))
+    } 
+    else # year given, need to compare year with overall
+    { 
+        year_films = data[which(data$year == year),]
+        
+        runtime_distribution_year =  distribution_of_runtimes(year_films) %>% mutate(compare=year)
+        
+        runtime_distribution_all = runtime_distribution_all %>% mutate(compare='All')
+        
+        combined_data = rbind(runtime_distribution_year, runtime_distribution_all)
+        
+        ggplot(combined_data, aes(x=runtime, y=count, color=compare)) +
+            geom_point() + labs(title = "Runtime Distribution", x = "Runtime", y = "Number of Films") +
+            theme(text = element_text(size=20))
+        
+    }
+    
+}
+
+
+plotGenrePerYear <- function(data, year)
+{
+    genre_distribution_all = distribution_of_genres(data)
+    
+    if (is.null(year)) # no year given, so all the data
+    { 
+        ggplot(genre_distribution_all, aes(x=genre, y=count)) +
+            geom_bar(stat='identity') + 
+            labs(title = "Genre Distribution", x = "Genre", y = "Number of Films") + coord_flip() +
+            theme(text = element_text(size=20))
+    } 
+    else # year given, need to compare year with overall
+    { 
+        year_films = data[which(data$year == year),]
+        
+        genre_distribution_year =  distribution_of_genres(year_films) %>% mutate(compare=year)
+        
+        genre_distribution_all = genre_distribution_all %>% 
+            filter(genre %in% genre_distribution_year$genre) %>% 
+            mutate(compare='All')
+        
+        combined_data = rbind(genre_distribution_year, genre_distribution_all)
+        
+        ggplot(combined_data, aes(x=genre, y=count, fill=compare)) +
+            geom_bar(stat='identity', position='dodge') + 
+            labs(title = "Genre Distribution", x = "Genre", y = "Number of Films") + coord_flip() +
+            theme(text = element_text(size=20))
+        
+    }
+}
+
+plotCertificatesPerYear <- function(data, year)
+{
+    certificate_distribution_all = distribution_of_certificates(data)
+    
+    if (is.null(year)) # no year given, so all the data
+    { 
+        
+        ggplot(certificate_distribution_all, aes(x=rating, y=count)) +
+            geom_bar(stat='identity', fill = "#f3ce13") + 
+            labs(title = "Certificate Distribution", x = "Certificate", y = "Number of Films") + coord_flip() + 
+            theme(text = element_text(size=20))
+    } 
+    else # year given, need to compare year with overall
+    { 
+        year_films = data[which(data$year == year),]
+        
+        certificate_distribution_year =  distribution_of_certificates(year_films) %>% mutate(compare=year)
+        
+        certificate_distribution_all = certificate_distribution_all %>% 
+            filter(rating %in% certificate_distribution_year$rating) %>% 
+            mutate(compare='All')
+        
+        combined_data = rbind(certificate_distribution_year, certificate_distribution_all)
+        
+        ggplot(combined_data, aes(x=rating, y=count, fill=compare)) +
+            geom_bar(stat='identity', position='dodge') + 
+            labs(title = "Certificate Distribution", x = "Certificate", y = "Number of Films") + coord_flip() +
+            theme(text = element_text(size=20))
+        
+    }
+}
+
+plotTopKeywordsPerYear <- function(movies_with_keywords, year, n)
+{
+    
+    if (is.null(year)) # no year given, so all the data (keywords_subset)
+    { 
+        keyword_distribution_all = distribution_of_keywords(movies_with_keywords, n)
+        ggplot(keyword_distribution_all, aes(x=keyword, y=count)) +
+            geom_bar(stat='identity', fill = "#f3ce13") + 
+            labs(title = "Keyword Distribution", x = "Keyword", y = "Number of Films") +
+            theme(text = element_text(size=20),
+                  axis.text.x = element_text(angle = 45, hjust = 1)
+            ) + coord_flip()
+    } 
+    else # year given, need to compare year with overall
+    { 
+        year_films = movies_with_keywords[which(movies_with_keywords$year == year),]
+        
+        keyword_distribution_year =  distribution_of_keywords(year_films, n) %>% mutate(compare=year)
+        
+        keyword_distribution_all = distribution_of_keywords(movies_with_keywords, nrow(movies_with_keywords)) %>%
+            filter(keyword %in% keyword_distribution_year$keyword) %>% mutate(compare='All') 
+        
+        combined_data = rbind(keyword_distribution_year, keyword_distribution_all)
+        
+        ggplot(combined_data, aes(x=keyword, y=count, fill=compare)) +
+            geom_bar(stat='identity', position='dodge') + 
+            labs(title = "Keyword Distribution", x = "Keyword", y = "Number of Films") +
+            theme(text = element_text(size=20),
+                  axis.text.x = element_text(angle = 45, hjust = 1)
+            ) + coord_flip()
+        
+    }
+}

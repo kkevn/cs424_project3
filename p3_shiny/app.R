@@ -40,7 +40,8 @@ print(paste0("---- unique movies, n=", unique_films))
 
 # get list of movies where none is duplicated (used for times where you only want to account for a movie once, such as runtime average)
 unique_movies <- subset(data, !duplicated(subset(data, select = movie)))
-unique_movies_with_keywords = keywords_subset %>% left_join(unique_movies)
+movie_year_map = hashmap(unique_movies$movie, unique_movies$year)
+keywords_subset$year = movie_year_map[[keywords_subset$movie]]
 
 # get min and max years
 min_year_all <- min(data$year)
@@ -62,7 +63,7 @@ load_data(min_year_all, max_year_all, min_decade_all, max_decade_all, min_runtim
 
 # get a count of movies & distribution of things for the entire data (of just unique movies)
 by_year <- number_films_per_year(unique_movies)
-#by_decade <- number_films_per_decade(unique_movies) # takes a minute to calculate decades
+# by_decade <- number_films_per_decade(unique_movies) # takes a minute to calculate decades
 by_month <- number_films_per_month(unique_movies)
 by_runtime <- distribution_of_runtimes(unique_movies)
 by_certificates <- distribution_of_certificates(unique_movies)
@@ -267,7 +268,7 @@ ui = dashboardPage(skin = "yellow",
                  tabPanel("by Year",
                           tabsetPanel(
                             tabPanel("Bar Plot",
-                                     tabPanel("Bar Plot", h1("bar plot here"))
+                                     tabPanel("Bar Plot", plotOutput("genre_by_year"))
                             ),
                             tabPanel("Tabular Format",
                                      tabPanel("Tabular Format", h1("table here"))
@@ -277,7 +278,7 @@ ui = dashboardPage(skin = "yellow",
                  tabPanel("by Decade",
                           tabsetPanel(
                             tabPanel("Bar Plot",
-                                     tabPanel("Bar Plot", h1("bar plot here"))
+                                     tabPanel("Bar Plot", plotOutput("genre_by_decade"))
                             ),
                             tabPanel("Tabular Format",
                                      tabPanel("Tabular Format", h1("table here"))
@@ -287,7 +288,7 @@ ui = dashboardPage(skin = "yellow",
                  tabPanel("by Month",
                           tabsetPanel(
                             tabPanel("Bar Plot",
-                                     tabPanel("Bar Plot", h1("bar plot here"))
+                                     tabPanel("Bar Plot", plotOutput("genre_by_month"))
                             ),
                             tabPanel("Tabular Format",
                                      tabPanel("Tabular Format", h1("table here"))
@@ -297,7 +298,7 @@ ui = dashboardPage(skin = "yellow",
                  tabPanel("by Year %",
                           tabsetPanel(
                             tabPanel("Bar Plot",
-                                     tabPanel("Bar Plot", h1("bar plot here"))
+                                     tabPanel("Bar Plot", plotOutput("genre_by_year_percent"))
                             ),
                             tabPanel("Tabular Format",
                                      tabPanel("Tabular Format", h1("table here"))
@@ -307,7 +308,7 @@ ui = dashboardPage(skin = "yellow",
                  tabPanel("by Decade %",
                           tabsetPanel(
                             tabPanel("Bar Plot",
-                                     tabPanel("Bar Plot", h1("bar plot here"))
+                                     tabPanel("Bar Plot", plotOutput("genre_by_decade_percent"))
                             ),
                             tabPanel("Tabular Format",
                                      tabPanel("Tabular Format", h1("table here"))
@@ -317,7 +318,7 @@ ui = dashboardPage(skin = "yellow",
                  tabPanel("by Month %",
                           tabsetPanel(
                             tabPanel("Bar Plot",
-                                     tabPanel("Bar Plot", h1("bar plot here"))
+                                     tabPanel("Bar Plot", plotOutput("genre_by_month_percent"))
                             ),
                             tabPanel("Tabular Format",
                                      tabPanel("Tabular Format", h1("table here"))
@@ -327,7 +328,7 @@ ui = dashboardPage(skin = "yellow",
                  tabPanel("by Runtime",
                           tabsetPanel(
                             tabPanel("Bar Plot",
-                                     tabPanel("Bar Plot", h1("bar plot here"))
+                                     tabPanel("Bar Plot", plotOutput("genre_by_runtime"))
                             ),
                             tabPanel("Tabular Format",
                                      tabPanel("Tabular Format", h1("table here"))
@@ -337,7 +338,7 @@ ui = dashboardPage(skin = "yellow",
                  tabPanel("by Certification",
                           tabsetPanel(
                             tabPanel("Bar Plot",
-                                     tabPanel("Bar Plot", h1("bar plot here"))
+                                     tabPanel("Bar Plot", plotOutput("genre_by_certificate"))
                             ),
                             tabPanel("Tabular Format",
                                      tabPanel("Tabular Format", h1("table here"))
@@ -347,7 +348,7 @@ ui = dashboardPage(skin = "yellow",
                  tabPanel("by Top N Keywords",
                           tabsetPanel(
                             tabPanel("Bar Plot",
-                                     tabPanel("Bar Plot", h1("bar plot here"))
+                                     tabPanel("Bar Plot", plotOutput("genre_by_top_keywords"))
                             ),
                             tabPanel("Tabular Format",
                                      tabPanel("Tabular Format", h1("table here"))
@@ -368,6 +369,21 @@ ui = dashboardPage(skin = "yellow",
 server = function(input, output, session) {
   
     first_view = reactiveVal(TRUE)
+    last_decade = reactiveVal(0)
+    last_year = reactiveVal(0)
+    decade_on = reactiveVal(FALSE)
+    year_on = reactiveVal(FALSE)
+    
+    which_on = eventReactive(c(input$input_year, input$input_decade), {
+        year = input$input_year
+        year_on(if (year != last_year()) TRUE else FALSE)
+        
+        decade = input$input_decade
+        decade_on(if (decade != last_decade()) TRUE else FALSE)
+        
+        last_year(year)
+        last_decade(decade)
+    })
     
   observeEvent(input$about_info, {
     showModal(
@@ -432,6 +448,7 @@ server = function(input, output, session) {
   ### AVERAGES OF FILMS PER YEAR, MONTH, AND RUNTIME
   
   output$info_year <- renderInfoBox({
+      which_on() # call once to get the year/decade switch working
     infoBox(
       "Average/Year:", paste0(avg_per_year, " films"), icon = icon("fas fa-calendar"),
       color = "blue", fill = FALSE
@@ -460,9 +477,9 @@ server = function(input, output, session) {
     )
   })
   
-  ########## WHEN YEAR INPUT CHANGES #######
+  ########## WHEN YEAR/DECADE INPUT CHANGES #######
   
-  observeEvent(input$input_year, {
+  observeEvent(c(input$input_year, input$input_decade), {
       if (first_view()){
           output$overview_year_plot = renderPlot({
               plotYearlyFilms(unique_movies)
@@ -477,42 +494,61 @@ server = function(input, output, session) {
           })
           
           output$overview_genre_plot = renderPlot({
-              plotGenrePerYear(unique_movies, NULL)
+              plotGenrePerGivenYear(unique_movies, NULL)
           })
           
           output$overview_certificate_plot = renderPlot({
-              plotCertificatesPerYear(unique_movies, NULL)
+              plotCertificatesPerGivenYear(unique_movies, NULL)
           })
           
           output$overview_top_keywords_plot = renderPlot({
-              plotTopKeywordsPerYear(unique_movies_with_keywords, NULL, input$input_top_n)
+              plotTopKeywordsPerGivenYear(keywords_subset, NULL, input$input_top_n)
           })
           
           first_view(FALSE)
           
       } else {
+          
           output$overview_year_plot = renderPlot({
-              plotYearlyFilms(unique_movies %>% filter(year == input$input_year))
+              if (year_on())
+                  plotYearlyFilms(unique_movies %>% filter(year == input$input_year))
+              else
+                  plotFilmsByDecade(unique_movies, input$input_decade)
           })
           
           output$overview_month_plot= renderPlot({
-              plotMonthPerGivenYear(unique_movies, input$input_year)
+              if (year_on())
+                plotMonthPerGivenYear(unique_movies, input$input_year)
+              else 
+                plotMonthPerGivenDecade(unique_movies, input$input_decade)
           })
           
           output$overview_runtime_plot = renderPlot({
-              plotRuntimePerGivenYear(unique_movies, input$input_year)
+              if (year_on())
+                plotRuntimePerGivenYear(unique_movies, input$input_year)
+              else
+                plotRuntimePerGivenDecade(unique_movies, input$input_decade)
           })
           
           output$overview_genre_plot = renderPlot({
-              plotGenrePerYear(unique_movies, input$input_year)
+              if (year_on())
+                  plotGenrePerGivenYear(unique_movies, input$input_year)
+              else
+                  plotGenrePerGivenDecade(unique_movies, input$input_decade)
           })
           
           output$overview_certificate_plot = renderPlot({
-              plotCertificatesPerYear(unique_movies, input$input_year)
+              if (year_on())
+                plotCertificatesPerGivenYear(unique_movies, input$input_year)
+              else
+                plotCertificatesPerGivenDecade(unique_movies, input$input_decade)
           })
           
           output$overview_top_keywords_plot = renderPlot({
-              plotTopKeywordsPerYear(unique_movies_with_keywords, input$input_year, input$input_top_n)
+              if (year_on())
+                plotTopKeywordsPerGivenYear(keywords_subset, input$input_year, input$input_top_n)
+              else
+                plotTopKeywordsPerGivenDecade(keywords_subset, input$input_decade, input$input_top_n)
           })
       }
   })

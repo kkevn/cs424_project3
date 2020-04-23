@@ -63,7 +63,7 @@ load_data(min_year_all, max_year_all, min_decade_all, max_decade_all, min_runtim
 
 # get a count of movies & distribution of things for the entire data (of just unique movies)
 by_year <- number_films_per_year(unique_movies)
-# by_decade <- number_films_per_decade(unique_movies) # takes a minute to calculate decades
+by_decade <- number_films_per_decade(unique_movies) # takes a minute to calculate decades
 by_month <- number_films_per_month(unique_movies)
 by_runtime <- distribution_of_runtimes(unique_movies)
 by_certificates <- distribution_of_certificates(unique_movies)
@@ -136,7 +136,7 @@ ui = dashboardPage(skin = "yellow",
                    # genre input
                    selectInput(inputId = "input_genre",
                                label = "Select a Genre:",
-                               choices = c("All genres", by_genre[1])),
+                               choices = by_genre[1]),
 
                    # certificate input
                    selectInput(inputId = "input_certificate",
@@ -477,7 +477,7 @@ server = function(input, output, session) {
     )
   })
   
-  ########## WHEN YEAR/DECADE INPUT CHANGES #######
+  ########## WHEN YEAR/DECADE INPUT CHANGES, UPDATE OVERVIEW GRAPHS#######
   
   observeEvent(c(input$input_year, input$input_decade), {
       if (first_view()){
@@ -558,6 +558,48 @@ server = function(input, output, session) {
   ## B REQUIREMENTS BELOW
   ##
   ##
+  ########## WHEN YEAR/DECADE INPUT CHANGES, UPDATE GENRE GRAPHS#######
+  
+  observeEvent(input$input_genre, {
+      genre = input$input_genre
+      
+      output$genre_by_year = renderPlot({
+          plotYearbyGenre(unique_movies, genre)
+      })
+      
+      output$genre_by_decade = renderPlot({
+          plotDecadeByGenre(unique_movies, genre)
+      })
+      
+      output$genre_by_month = renderPlot({
+          plotMonthByGenre(unique_movies, genre)
+      })
+      
+      output$genre_by_year_percent = renderPlot({
+          plotYearPercentageByGenre(unique_movies, genre, by_year)
+      })
+      
+      output$genre_by_decade_percent  = renderPlot({
+          plotDecadePercentageByGenre(unique_movies, genre, by_decade)
+      })
+      
+      output$genre_by_month_percent = renderPlot({
+          plotMonthPercentageByGenre(unique_movies, genre, by_month)
+      })
+      
+      output$genre_by_runtime = renderPlot({
+          
+      })
+      
+      output$genre_by_certificate = renderPlot({
+          
+      })
+      
+      output$genre_by_top_keywords = renderPlot({
+          
+      })
+  })
+  
 }
 
 shinyApp(ui=ui, server=server)

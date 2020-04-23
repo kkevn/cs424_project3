@@ -47,41 +47,23 @@ number_films_per_year = function(table) {
     by_year
 }
 
+get_decade = function(year){  # given a year, return its decade
+    as.integer(year/10) * 10
+}
+
 # function to get a count of movies from each decade as a table
 number_films_per_decade = function(table) {
-
-    # create empty dataframe of each decade in range from calculated min to max
-    all_decades <- data.frame(formatC(1:((max_decade_all - min_decade_all) / 10 + 1), width = 2), 0)
-    names(all_decades)[1] <- "decade"
-    names(all_decades)[2] <- "count"
-    all_decades$decade <- seq(from = min_decade_all, to = max_decade_all, by = 10)
-
-    # INEFFICIENT NESTED LOOP, IDEALLY A GROUP_BY OR SOMETHING BETTER
-    # loop through each movie in given table
-    for (row in 1:as.numeric(count(table))) {
-
-        # get the current movie's decade it belongs to
-        curr_decade = floor(table$year[row] / 10) * 10
-
-        # loop through each decade
-        for (i in 1:as.numeric(count(all_decades))) {
-
-            # increment the decade count for found decade
-            if (curr_decade == all_decades$decade[i]) {
-                all_decades$count[i] <- all_decades$count[i] + 1
-                break
-            }
-        }
-    }
-
-    # output info
-    total_films = as.numeric(sum(all_decades$count))
-    print(paste0("---- total counted= ", total_films))
-    unique_decades = as.numeric(count(all_decades))
-    print(paste0("---- unique decades= ", unique_decades))
-
+    
+    table_with_decade = table %>% 
+        select(year) %>% 
+        mutate(decade=get_decade(year)) %>%
+        group_by(decade) %>%
+        summarise(count=n()) %>%
+        arrange(decade)
+    
+    
     # return the table of counts per decade
-    all_decades
+    table_with_decade
 }
 
 # function to get a count of movies from each month as a table
@@ -177,8 +159,8 @@ distribution_of_keywords = function(table, n) {
 }
 
 
-########################## FUNCTIONS FOR YEAR PLOTS #####################################
-########################## FUNCTIONS FOR YEAR PLOTS #####################################
+########################## FUNCTIONS FOR OVERVIEW YEAR PLOTS #####################################
+########################## FUNCTIONS FOR OVERVIEW YEAR PLOTS #####################################
 
 plotYearlyFilms = function(data){
     films_per_year= number_films_per_year(data) %>% filter(count > 0) 
@@ -359,8 +341,8 @@ plotTopKeywordsPerGivenYear <- function(movies_with_keywords, year, n)
 
 
 
-########################## FUNCTIONS FOR DECADE PLOTS #####################################
-########################## FUNCTIONS FOR DECADE PLOTS #####################################
+########################## FUNCTIONS FOR OVERVIEW DECADE PLOTS #####################################
+########################## FUNCTIONS FOR OVERVIEW DECADE PLOTS #####################################
 
 plotFilmsByDecade = function(data, decade){
     decade_films = data %>% select(year) %>% 
@@ -368,13 +350,11 @@ plotFilmsByDecade = function(data, decade){
         summarise(count=n()) %>% 
         mutate(decade=decade)
     
-    
     ggplot(decade_films, aes(x=as.factor(decade), y=count)) +
         geom_bar(stat = "identity", fill = "#f3ce13") + 
         labs(title = paste("Films in the ", decade, "'s", sep=''), x = "Decade", y = "Number of Films") +
         theme(text = element_text(size=20))
 }
-
 
 
 plotMonthPerGivenDecade <- function(data, decade)
@@ -542,3 +522,122 @@ plotTopKeywordsPerGivenDecade <- function(movies_with_keywords, decade, n)
         
     }
 }
+
+
+########################## FUNCTIONS FOR GENRE PLOTS #####################################
+########################## FUNCTIONS FOR GENRE PLOTS #####################################
+
+plotYearbyGenre <- function(data, genre)
+{
+    unique_movies_genre = data[which(data$genre == genre),]
+    year_genres_graph = number_films_per_year(unique_movies_genre)
+    
+    ggplot(year_genres_graph, aes(x= year, y=count)) + 
+        geom_bar(stat = "identity", fill = "gray36") + 
+        labs(title = paste(genre, "Films by Year", sep=" "), x = "Year", y = "Number of Films") +
+        theme(text = element_text(size=20))
+}
+
+plotDecadeByGenre <- function(data, genre)
+{
+    
+    unique_movies_genre = data[which(data$genre == genre),]
+    
+    decade_genres_graph = number_films_per_decade(unique_movies_genre)
+    
+    ggplot(decade_genres_graph, aes(x=as.factor(decade), y=count)) + 
+        geom_bar(stat = "identity", fill = "#f3ce13") + 
+        labs(title = paste(genre, "Films by Decade", sep=" "), x = "Decade", y = "Number of Films") +
+        theme(text = element_text(size=20),
+              axis.text.x = element_text(angle=45, hjust=1))
+}
+
+
+plotMonthByGenre <- function(data, genre)
+{
+    
+    unique_movies_genre = data[which(data$genre == genre),]
+    
+    month_genres_graph = number_films_per_month(unique_movies_genre)
+    
+    ggplot(month_genres_graph, aes(x= month, y=count)) + 
+        geom_bar(stat = "identity", fill = "#f3ce13") + 
+        labs(title = paste(genre, "Films by Month", sep=" "), x = "Month", y = "Number of Films") +
+        theme(text = element_text(size=20),
+              axis.text.x = element_text(angle=45, hjust=1)
+        )
+}
+
+
+plotYearPercentageByGenre <- function(data, genre, by_year)
+{
+    
+    unique_movies_genre = data[which(data$genre == genre),]
+    
+    year_genres_graph = number_films_per_year(unique_movies_genre) %>% arrange(year)
+    
+    year_genres_graph$total <- (by_year %>% filter(year %in% year_genres_graph$year) %>% arrange(year))$count 
+    
+    year_genres_graph = year_genres_graph %>% mutate(percent=count/total * 100)
+    
+    ggplot(year_genres_graph, aes(x= year, y=percent)) + 
+        geom_bar(stat = "identity", fill = "#f3ce13") + 
+        labs(title = paste("Percentage of", genre, "Films by Year", sep=" "), x = "Year", y = "Percentage") +
+        theme(text = element_text(size=20),
+              axis.text.x = element_text(angle=45, hjust=1)
+        )
+}
+
+
+plotDecadePercentageByGenre <- function(data, genre, by_decade)
+{
+    
+    unique_movies_genre = data[which(data$genre == genre),]
+    
+    decade_genres_graph = number_films_per_decade(unique_movies_genre) %>% arrange(decade)
+    
+    decade_genres_graph$total <- (by_decade %>% filter(decade %in% decade_genres_graph$decade) %>% arrange(decade))$count 
+    
+    decade_genres_graph = decade_genres_graph %>% mutate(percent=count/total * 100)
+    
+    ggplot(decade_genres_graph, aes(x=as.factor(decade), y=percent)) + 
+        geom_bar(stat = "identity", fill = "#f3ce13") + 
+        labs(title = paste("Percentage of", genre, "Films by Decade", sep=" "), x = "Decade", y = "Percentage") +
+        theme(text = element_text(size=20),
+              axis.text.x = element_text(angle=45, hjust=1)
+        )
+}
+
+
+plotMonthPercentageByGenre <- function(data, genre, by_month)
+{
+    
+    unique_movies_genre = data[which(data$genre == genre),]
+    
+    month_genres_graph = number_films_per_month(unique_movies_genre) %>% arrange(month)
+    
+    month_genres_graph$total <- (by_month %>% filter(month %in% month_genres_graph$month) %>% arrange(month))$count 
+    
+    month_genres_graph = month_genres_graph %>% mutate(percent=count/total * 100)
+    
+    ggplot(month_genres_graph, aes(x= month, y=percent)) + 
+        geom_bar(stat = "identity", fill = "#f3ce13") + 
+        labs(title = paste("Percentage of", genre, "Films by Month", sep=" "), x = "Month", y = "Percentage") +
+        theme(text = element_text(size=20),
+              axis.text.x = element_text(angle=45, hjust=1)
+        )
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+

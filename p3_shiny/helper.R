@@ -1,3 +1,5 @@
+yellow = "#f3ce13" # the theme color?
+
 # initialize upper and lower limit variables
 min_year_all = 0
 max_year_all = 0
@@ -527,52 +529,57 @@ plotTopKeywordsPerGivenDecade <- function(movies_with_keywords, decade, n)
 ########################## FUNCTIONS FOR GENRE PLOTS #####################################
 ########################## FUNCTIONS FOR GENRE PLOTS #####################################
 
-plotYearbyGenre <- function(data, genre)
+plotYearByGenre <- function(data, genres)
 {
-    unique_movies_genre = data[which(data$genre == genre),]
-    year_genres_graph = number_films_per_year(unique_movies_genre)
     
-    ggplot(year_genres_graph, aes(x= year, y=count)) + 
+    unique_movies_genre = data[which(data$genre %in% genres),]
+    
+    year_genres_graph = number_films_per_year(unique_movies_genre) %>% filter(year > 0)
+    
+    ggplot(year_genres_graph, aes(x=year, y=count)) + 
         geom_bar(stat = "identity", fill = "gray36") + 
-        labs(title = paste(genre, "Films by Year", sep=" "), x = "Year", y = "Number of Films") +
+        labs(title = paste(paste(genres, collapse='/'), "Films by Year", sep=" "), x = "Year", y = "Number of Films") +
         theme(text = element_text(size=20))
 }
 
-plotDecadeByGenre <- function(data, genre)
+
+
+plotDecadeByGenre <- function(data, genres)
 {
     
-    unique_movies_genre = data[which(data$genre == genre),]
+    unique_movies_genre = data[which(data$genre %in% genres),]
     
     decade_genres_graph = number_films_per_decade(unique_movies_genre)
     
     ggplot(decade_genres_graph, aes(x=as.factor(decade), y=count)) + 
         geom_bar(stat = "identity", fill = "#f3ce13") + 
-        labs(title = paste(genre, "Films by Decade", sep=" "), x = "Decade", y = "Number of Films") +
+        labs(title = paste(paste(genres, collapse='/'), "Films by Decade", sep=" "), x = "Decade", y = "Number of Films") +
         theme(text = element_text(size=20),
               axis.text.x = element_text(angle=45, hjust=1))
 }
 
 
-plotMonthByGenre <- function(data, genre)
+plotMonthByGenre <- function(data, genres)
 {
     
-    unique_movies_genre = data[which(data$genre == genre),]
+    unique_movies_genre = data[which(data$genre %in% genres),]
     
     month_genres_graph = number_films_per_month(unique_movies_genre)
     
     ggplot(month_genres_graph, aes(x= month, y=count)) + 
         geom_bar(stat = "identity", fill = "#f3ce13") + 
-        labs(title = paste(genre, "Films by Month", sep=" "), x = "Month", y = "Number of Films") +
+        labs(title = paste(paste(genres, collapse='/'), "Films by Month", sep=" "), x = "Month", y = "Number of Films") +
         theme(text = element_text(size=20),
               axis.text.x = element_text(angle=45, hjust=1)
         )
 }
 
 
-plotYearPercentageByGenre <- function(data, genre, by_year)
+
+plotYearPercentageByGenre <- function(data, genres, by_year)
 {
     
-    unique_movies_genre = data[which(data$genre == genre),]
+    unique_movies_genre = data[which(data$genre %in% genres),]
     
     year_genres_graph = number_films_per_year(unique_movies_genre) %>% arrange(year)
     
@@ -582,17 +589,17 @@ plotYearPercentageByGenre <- function(data, genre, by_year)
     
     ggplot(year_genres_graph, aes(x= year, y=percent)) + 
         geom_bar(stat = "identity", fill = "#f3ce13") + 
-        labs(title = paste("Percentage of", genre, "Films by Year", sep=" "), x = "Year", y = "Percentage") +
+        labs(title = paste("Percentage of", paste(genres, collapse='/'), "Films by Year", sep=" "), x = "Year", y = "Percentage") +
         theme(text = element_text(size=20),
               axis.text.x = element_text(angle=45, hjust=1)
         )
 }
 
 
-plotDecadePercentageByGenre <- function(data, genre, by_decade)
+plotDecadePercentageByGenre <- function(data, genres, by_decade)
 {
     
-    unique_movies_genre = data[which(data$genre == genre),]
+    unique_movies_genre = data[which(data$genre %in% genres),]
     
     decade_genres_graph = number_films_per_decade(unique_movies_genre) %>% arrange(decade)
     
@@ -602,17 +609,18 @@ plotDecadePercentageByGenre <- function(data, genre, by_decade)
     
     ggplot(decade_genres_graph, aes(x=as.factor(decade), y=percent)) + 
         geom_bar(stat = "identity", fill = "#f3ce13") + 
-        labs(title = paste("Percentage of", genre, "Films by Decade", sep=" "), x = "Decade", y = "Percentage") +
+        labs(title = paste("Percentage of", paste(genres, collapse='/'), "Films by Decade", sep=" "), x = "Decade", y = "Percentage") +
         theme(text = element_text(size=20),
               axis.text.x = element_text(angle=45, hjust=1)
         )
 }
 
 
-plotMonthPercentageByGenre <- function(data, genre, by_month)
+
+plotMonthPercentageByGenre <- function(data, genres, by_month)
 {
     
-    unique_movies_genre = data[which(data$genre == genre),]
+    unique_movies_genre = data[which(data$genre %in% genres),]
     
     month_genres_graph = number_films_per_month(unique_movies_genre) %>% arrange(month)
     
@@ -622,10 +630,54 @@ plotMonthPercentageByGenre <- function(data, genre, by_month)
     
     ggplot(month_genres_graph, aes(x= month, y=percent)) + 
         geom_bar(stat = "identity", fill = "#f3ce13") + 
-        labs(title = paste("Percentage of", genre, "Films by Month", sep=" "), x = "Month", y = "Percentage") +
+        labs(title = paste("Percentage of", paste(genres, collapse='/'), "Films by Month", sep=" "), x = "Month", y = "Percentage") +
         theme(text = element_text(size=20),
               axis.text.x = element_text(angle=45, hjust=1)
         )
+}
+
+
+
+plotRuntimeByGenre <- function(data, genres)
+{
+    unique_movies_genre = data[which(data$genre %in% genres),]
+    
+    runtime_genres_graph = distribution_of_runtimes(unique_movies_genre)
+    
+    ggplot(runtime_genres_graph, aes(x=runtime, y=count)) + 
+        geom_point() + 
+        labs(title = paste(paste(genres, collapse='/'), "Films Runtime", sep=" "), x = "Runtime", y = "Number of Films") +
+        theme(text = element_text(size=20))
+    
+}
+
+
+
+plotCertificatesByGenre <- function(data, genres)
+{
+    unique_movies_genre = data[which(data$genre %in% genres),]
+    
+    certificate_genres_graph = distribution_of_certificates(unique_movies_genre)
+    
+    ggplot(certificate_genres_graph, aes(x=rating, y=count)) + 
+        geom_bar(stat='identity', fill= yellow) + 
+        labs(title = paste(paste(genres, collapse='/'), "Film Certificates", sep=" "), x = "Certificate", y = "Number of Films") +
+        theme(text = element_text(size=20)) + coord_flip()
+    
+}
+
+
+
+plotTopKeywordsByGenre = function(data, genres, n){
+    
+    unique_movies_genre = data[which(data$genre %in% genres),]
+    
+    keywords_genres_graph = distribution_of_keywords(unique_movies_genre, n)
+    
+    ggplot(keywords_genres_graph, aes(x=keyword, y=count)) + 
+        geom_bar(stat='identity', fill= yellow) + 
+        labs(title = paste(paste(genres, collapse='/'), "Film Keywords", sep=" "), x = "Keyword", y = "Number of Films") +
+        theme(text = element_text(size=20)) + coord_flip()
 }
 
 

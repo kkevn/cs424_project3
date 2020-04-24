@@ -40,8 +40,17 @@ print(paste0("---- unique movies, n=", unique_films))
 
 # get list of movies where none is duplicated (used for times where you only want to account for a movie once, such as runtime average)
 unique_movies <- subset(data, !duplicated(subset(data, select = movie)))
+
+# associate movie names with year, month, genre for the keywords
 movie_year_map = hashmap(unique_movies$movie, unique_movies$year)
+movie_month_map = hashmap(unique_movies$movie, as.character(unique_movies$month))
+movie_genre_map = hashmap(unique_movies$movie, as.character(unique_movies$genre))
+
+
 keywords_subset$year = movie_year_map[[keywords_subset$movie]]
+keywords_subset$month = movie_month_map[[keywords_subset$movie]]
+keywords_subset$genre = movie_genre_map[[keywords_subset$movie]]
+
 
 # get min and max years
 min_year_all <- min(data$year)
@@ -122,12 +131,13 @@ ui = dashboardPage(skin = "yellow",
                    # top N input
                    numericInput(inputId = "input_top_n",
                                 label = "Select Top N:",
-                                min = 10, max = 56048, value = 10),
+                                min = 10, max = 56048, value = 10, step = 1),
 
                    # keyword input
-                   textInput(inputId = "input_keyword",
-                             label = "Select a Keyword:",
-                             value = "", placeholder = "comma separate for more"),
+                   selectInput(inputId = "input_keyword",
+                             label = "Select a Keyword(s):",
+                             choices = by_keywords$keyword,
+                            multiple = TRUE),
 
                    sidebarMenu(
                      menuItem("* leave blank for all keywords", tabName = "cheapBlankSpace", icon = NULL),
@@ -136,7 +146,8 @@ ui = dashboardPage(skin = "yellow",
                    # genre input
                    selectInput(inputId = "input_genre",
                                label = "Select a Genre:",
-                               choices = by_genre[1]),
+                               choices = by_genre$genre, 
+                               multiple = TRUE),
 
                    # certificate input
                    selectInput(inputId = "input_certificate",
@@ -368,11 +379,13 @@ ui = dashboardPage(skin = "yellow",
 
 server = function(input, output, session) {
   
+    # Logic to determine if the app started and which was the last input done
     first_view = reactiveVal(TRUE)
     last_decade = reactiveVal(0)
     last_year = reactiveVal(0)
     decade_on = reactiveVal(FALSE)
     year_on = reactiveVal(FALSE)
+    last_genre = reactiveVal(c())
     
     which_on = eventReactive(c(input$input_year, input$input_decade), {
         year = input$input_year
@@ -384,6 +397,9 @@ server = function(input, output, session) {
         last_year(year)
         last_decade(decade)
     })
+    
+    # Update keywords when N changes 
+    
     
   observeEvent(input$about_info, {
     showModal(
@@ -561,10 +577,11 @@ server = function(input, output, session) {
   ########## WHEN YEAR/DECADE INPUT CHANGES, UPDATE GENRE GRAPHS#######
   
   observeEvent(input$input_genre, {
+      
       genre = input$input_genre
       
       output$genre_by_year = renderPlot({
-          plotYearbyGenre(unique_movies, genre)
+          plotYearByGenre(unique_movies, genre)
       })
       
       output$genre_by_decade = renderPlot({
@@ -588,15 +605,15 @@ server = function(input, output, session) {
       })
       
       output$genre_by_runtime = renderPlot({
-          
+          plotRuntimeByGenre(unique_movies, genre)
       })
       
       output$genre_by_certificate = renderPlot({
-          
+          plotCertificatesByGenre(unique_movies, genre)
       })
       
       output$genre_by_top_keywords = renderPlot({
-          
+          plotTopKeywordsByGenre(keywords_subset, genre, input$input_top_n)
       })
   })
   

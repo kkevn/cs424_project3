@@ -71,14 +71,20 @@ print(paste0("---- runtimes range from: ", min_runtime_all, "-", max_runtime_all
 load_data(min_year_all, max_year_all, min_decade_all, max_decade_all, min_runtime_all, max_runtime_all)
 
 # get a count of movies & distribution of things for the entire data (of just unique movies)
+print('Getting by Year')
 by_year <- number_films_per_year(unique_movies)
+print('Getting by Decade')
 by_decade <- number_films_per_decade(unique_movies) # takes a minute to calculate decades
+print('Getting by Month')
 by_month <- number_films_per_month(unique_movies)
+print('Getting by Runtime')
 by_runtime <- distribution_of_runtimes(unique_movies)
+print('Getting by Certificate')
 by_certificates <- distribution_of_certificates(unique_movies)
+print('Getting by Genre')
 by_genre <- distribution_of_genres(unique_movies)
-n = 10
-by_keywords <- distribution_of_keywords(keywords_subset, n)
+print('Getting by Keyword')
+by_keywords <- distribution_of_keywords(keywords_subset)
 
 # get the averages for films per year, month, and runtime of entire (unique) data
 unique_years = as.numeric(count(by_year))
@@ -131,28 +137,28 @@ ui = dashboardPage(skin = "yellow",
                    # top N input
                    numericInput(inputId = "input_top_n",
                                 label = "Select Top N:",
-                                min = 10, max = 56048, value = 10, step = 1),
+                                min = 10, max = 56048, value = 10),
 
                    # keyword input
                    selectInput(inputId = "input_keyword",
                              label = "Select a Keyword(s):",
-                             choices = by_keywords$keyword,
-                            multiple = TRUE),
-
-                   sidebarMenu(
-                     menuItem("* leave blank for all keywords", tabName = "cheapBlankSpace", icon = NULL),
-                     menuItem("", tabName = "cheapBlankSpace", icon = NULL)),
+                             choices = c('All', as.character(by_keywords$keyword)),
+                            multiple = TRUE,
+                            selected = c('All')),
 
                    # genre input
                    selectInput(inputId = "input_genre",
-                               label = "Select a Genre:",
-                               choices = by_genre$genre, 
-                               multiple = TRUE),
+                               label = "Select a Genre(s):",
+                               choices = c('All', as.character(by_genre$genre)), 
+                               multiple = TRUE,
+                               selected = c('All')),
 
                    # certificate input
                    selectInput(inputId = "input_certificate",
-                               label = "Select a Certificate:",
-                               choices = c("All certificates", by_certificates[1])),
+                               label = "Select a Certificate(s):",
+                               choices =  c('All', by_certificates[1]),
+                               multiple = TRUE,
+                               selected = c('All')),
 
                    sidebarMenu(
                      menuItem("", tabName = "cheapBlankSpace", icon = NULL)),
@@ -399,7 +405,11 @@ server = function(input, output, session) {
     })
     
     # Update keywords when N changes 
-    
+    observeEvent(input$input_top_n, {
+        N = input$input_top_n
+        new_choices = c('All', as.character(by_keywords$keyword[1:N]))
+        updateSelectInput(session, "input_keyword", choices = new_choices, selected = c('All'))
+    })
     
   observeEvent(input$about_info, {
     showModal(
@@ -495,7 +505,7 @@ server = function(input, output, session) {
   
   ########## WHEN YEAR/DECADE INPUT CHANGES, UPDATE OVERVIEW GRAPHS#######
   
-  observeEvent(c(input$input_year, input$input_decade), {
+  observeEvent(c(input$input_year, input$input_decade, input$input_genre, input$input_keyword, input$input_certificate, input$input_runtime), {
       if (first_view()){
           output$overview_year_plot = renderPlot({
               plotYearlyFilms(unique_movies)
@@ -525,46 +535,48 @@ server = function(input, output, session) {
           
       } else {
           
+          filtered_data = getMoviesFromFilter(unique_movies, keywords_subset, input$input_keyword, input$input_genre, input$input_runtime, input$input_certificate)
+          
           output$overview_year_plot = renderPlot({
               if (year_on())
-                  plotYearlyFilms(unique_movies %>% filter(year == input$input_year))
+                  plotYearlyFilms(filtered_data %>% filter(year == input$input_year))
               else
-                  plotFilmsByDecade(unique_movies, input$input_decade)
+                  plotFilmsByDecade(filtered_data, input$input_decade)
           })
           
           output$overview_month_plot= renderPlot({
               if (year_on())
-                plotMonthPerGivenYear(unique_movies, input$input_year)
+                plotMonthPerGivenYear(filtered_data, input$input_year)
               else 
-                plotMonthPerGivenDecade(unique_movies, input$input_decade)
+                plotMonthPerGivenDecade(filtered_data, input$input_decade)
           })
           
           output$overview_runtime_plot = renderPlot({
               if (year_on())
-                plotRuntimePerGivenYear(unique_movies, input$input_year)
+                plotRuntimePerGivenYear(filtered_data, input$input_year)
               else
-                plotRuntimePerGivenDecade(unique_movies, input$input_decade)
+                plotRuntimePerGivenDecade(filtered_data, input$input_decade)
           })
           
           output$overview_genre_plot = renderPlot({
               if (year_on())
-                  plotGenrePerGivenYear(unique_movies, input$input_year)
+                  plotGenrePerGivenYear(filtered_data, input$input_year)
               else
-                  plotGenrePerGivenDecade(unique_movies, input$input_decade)
+                  plotGenrePerGivenDecade(filtered_data, input$input_decade)
           })
           
           output$overview_certificate_plot = renderPlot({
               if (year_on())
-                plotCertificatesPerGivenYear(unique_movies, input$input_year)
+                plotCertificatesPerGivenYear(filtered_data, input$input_year)
               else
-                plotCertificatesPerGivenDecade(unique_movies, input$input_decade)
+                plotCertificatesPerGivenDecade(filtered_data, input$input_decade)
           })
           
           output$overview_top_keywords_plot = renderPlot({
               if (year_on())
-                plotTopKeywordsPerGivenYear(keywords_subset, input$input_year, input$input_top_n)
+                plotTopKeywordsPerGivenYear(keywords_subset %>% filter(movie %in% filtered_data$movie), input$input_year, input$input_top_n)
               else
-                plotTopKeywordsPerGivenDecade(keywords_subset, input$input_decade, input$input_top_n)
+                plotTopKeywordsPerGivenDecade(keywords_subset %>% filter(movie %in% filtered_data$movie), input$input_decade, input$input_top_n)
           })
       }
   })

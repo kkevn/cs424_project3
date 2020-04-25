@@ -288,7 +288,7 @@ ui = dashboardPage(skin = "yellow",
                                      tabPanel("Bar Plot", plotOutput("genre_by_year"))
                             ),
                             tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", h1("table here"))
+                                     tabPanel("Tabular Format", dataTableOutput("genre_by_year_table"))
                             )
                           ) #Close inner tabsetPanel
                  ),
@@ -298,7 +298,7 @@ ui = dashboardPage(skin = "yellow",
                                      tabPanel("Bar Plot", plotOutput("genre_by_decade"))
                             ),
                             tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", h1("table here"))
+                                     tabPanel("Tabular Format", dataTableOutput("genre_by_decade_table"))
                             )
                           ) #Close inner tabsetPanel
                  ),
@@ -308,7 +308,7 @@ ui = dashboardPage(skin = "yellow",
                                      tabPanel("Bar Plot", plotOutput("genre_by_month"))
                             ),
                             tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", h1("table here"))
+                                     tabPanel("Tabular Format", dataTableOutput("genre_by_month_table"))
                             )
                           ) #Close inner tabsetPanel
                  ),
@@ -318,7 +318,7 @@ ui = dashboardPage(skin = "yellow",
                                      tabPanel("Bar Plot", plotOutput("genre_by_year_percent"))
                             ),
                             tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", h1("table here"))
+                                     tabPanel("Tabular Format", dataTableOutput("genre_by_year_percent_table"))
                             )
                           ) #Close inner tabsetPanel
                  ),
@@ -328,7 +328,7 @@ ui = dashboardPage(skin = "yellow",
                                      tabPanel("Bar Plot", plotOutput("genre_by_decade_percent"))
                             ),
                             tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", h1("table here"))
+                                     tabPanel("Tabular Format", dataTableOutput("genre_by_decade_percent_table"))
                             )
                           ) #Close inner tabsetPanel
                  ),
@@ -338,7 +338,7 @@ ui = dashboardPage(skin = "yellow",
                                      tabPanel("Bar Plot", plotOutput("genre_by_month_percent"))
                             ),
                             tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", h1("table here"))
+                                     tabPanel("Tabular Format", dataTableOutput("genre_by_month_percent_table"))
                             )
                           ) #Close inner tabsetPanel
                  ),
@@ -348,7 +348,7 @@ ui = dashboardPage(skin = "yellow",
                                      tabPanel("Bar Plot", plotOutput("genre_by_runtime"))
                             ),
                             tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", h1("table here"))
+                                     tabPanel("Tabular Format", dataTableOutput("genre_by_runtime_table"))
                             )
                           ) #Close inner tabsetPanel
                  ),
@@ -358,7 +358,7 @@ ui = dashboardPage(skin = "yellow",
                                      tabPanel("Bar Plot", plotOutput("genre_by_certificate"))
                             ),
                             tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", h1("table here"))
+                                     tabPanel("Tabular Format", dataTableOutput("genre_by_certificate_table"))
                             )
                           ) #Close inner tabsetPanel
                  ),
@@ -368,7 +368,7 @@ ui = dashboardPage(skin = "yellow",
                                      tabPanel("Bar Plot", plotOutput("genre_by_top_keywords"))
                             ),
                             tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", h1("table here"))
+                                     tabPanel("Tabular Format", dataTableOutput("genre_by_keyword_table"))
                             )
                           ) #Close inner tabsetPanel
                  )
@@ -586,7 +586,7 @@ server = function(input, output, session) {
   ## B REQUIREMENTS BELOW
   ##
   ##
-  ########## WHEN YEAR/DECADE INPUT CHANGES, UPDATE GENRE GRAPHS#######
+  ########## WHEN YEAR/DECADE INPUT CHANGES, UPDATE GENRE GRAPHS + TABLE #######
   
   observeEvent(input$input_genre, {
       
@@ -627,8 +627,52 @@ server = function(input, output, session) {
       output$genre_by_top_keywords = renderPlot({
           plotTopKeywordsByGenre(keywords_subset, genre, input$input_top_n)
       })
+  
+  
+  output$genre_by_year_table = DT::renderDataTable({
+      years_genre_table <- tableYearbyGenre(unique_movies, genre)
   })
   
-}
+  output$genre_by_decade_table = DT::renderDataTable({
+      decade_genre_table <- tableDecadebyGenre(unique_movies, genre)
+      
+  })
+      
+      output$genre_by_month_table = DT::renderDataTable({
+          month_genre_table <- tableMonthbyGenre(unique_movies, genre)
+  
+      })
+      
+      output$genre_by_year_percent_table = DT::renderDataTable({
+          year_percentage_genre_table <- tableYearPercentagehByGenre(unique_movies, genre, by_year)
+          
+      })
+      
+      output$genre_by_decade_percent_table = DT::renderDataTable({
+          decade_percentage_genre_table <- tableDecadePercentageByGenre(unique_movies, genre, by_decade)
+          
+      })
+      
+      output$genre_by_month_percent_table = DT::renderDataTable({
+          month_percentage_genre_table <- tableMonthPercentageByGenre(unique_movies, genre, by_month)
+          
+      })
+      
+      output$genre_by_runtime_table = DT::renderDataTable({
+          runtime_genres_table <- tableRuntimePercentageByGenre(unique_movies, genre)
+          
+          
+      })
+      
+      output$genre_by_certificate_table = DT::renderDataTable({
+          runtime_genres_table <- tableCertificatePercentageByGenre(unique_movies, genre)
+      })
+      
+      output$genre_by_keyword_table = DT::renderDataTable({
+          keywords_genres_table <- tableTopKeywordsByGenre(keywords_subset, genre, input$input_top_n)
+      })
+      
+  })
+  }
 
 shinyApp(ui=ui, server=server)

@@ -709,6 +709,111 @@ plotTopKeywordsByGenre = function(data, genres, n){
 }
 
 
+tableYearbyGenre <- function(data, genres)
+{
+    if ('All' %in% genres)
+        unique_movies_genre = data
+    else
+        unique_movies_genre = data[which(data$genre %in% genres),]
+    
+    year_films_specific_genre = number_films_per_year(unique_movies_genre)
+}
+
+tableDecadebyGenre <- function(data, genres)
+{
+    if ('All' %in% genres)
+        unique_movies_genre = data
+    else
+        unique_movies_genre = data[which(data$genre %in% genres),]
+    
+    decade_films_specific_genre = number_films_per_decade(unique_movies_genre)
+}
+
+tableMonthbyGenre <- function(data, genres)
+{
+    if ('All' %in% genres)
+        unique_movies_genre = data
+    else
+        unique_movies_genre = data[which(data$genre %in% genres),]
+    
+    month_films_specific_genre = number_films_per_month(unique_movies_genre)
+}
+
+tableYearPercentagehByGenre <- function(data, genres, by_year)
+{
+    
+    if ('All' %in% genres)
+        unique_movies_genre = data
+    else
+        unique_movies_genre = data[which(data$genre %in% genres),]
+    
+    year_genres_graph = number_films_per_year(unique_movies_genre) %>% arrange(year)
+    
+    year_genres_graph$total <- (by_year %>% filter(year %in% year_genres_graph$year) %>% arrange(year))$count 
+    
+    year_genres_table = year_genres_graph %>% mutate(percent=count/total * 100)
+}
+
+tableDecadePercentageByGenre <- function(data, genres, by_decade)
+{
+    
+    if ('All' %in% genres)
+        unique_movies_genre = data
+    else
+        unique_movies_genre = data[which(data$genre %in% genres),]
+    
+    decade_genres_graph = number_films_per_decade(unique_movies_genre) %>% arrange(decade)
+    
+    decade_genres_graph$total <- (by_decade %>% filter(decade %in% decade_genres_graph$decade) %>% arrange(decade))$count 
+    
+    decade_genres_table = decade_genres_graph %>% mutate(percent=count/total * 100)
+}
+
+tableMonthPercentageByGenre <- function(data, genres, by_month)
+{
+    
+    if ('All' %in% genres)
+        unique_movies_genre = data
+    else
+        unique_movies_genre = data[which(data$genre %in% genres),]
+    
+    month_genres_graph = number_films_per_month(unique_movies_genre) %>% arrange(month)
+    
+    month_genres_graph$total <- (by_month %>% filter(month %in% month_genres_graph$month) %>% arrange(month))$count 
+    
+    month_genres_table = month_genres_graph %>% mutate(percent=count/total * 100)
+}
+
+tableRuntimePercentageByGenre <- function(data, genres)
+{
+    if ('All' %in% genres)
+        unique_movies_genre = data
+    else
+        unique_movies_genre = data[which(data$genre %in% genres),]
+    
+    runtime_genres_table = distribution_of_runtimes(unique_movies_genre)
+}
+
+tableCertificatePercentageByGenre <- function(data, genres)
+{
+    if ('All' %in% genres)
+        unique_movies_genre = data
+    else
+        unique_movies_genre = data[which(data$genre %in% genres),]
+    
+    runtime_genres_table = distribution_of_certificates(unique_movies_genre)
+}
+
+tableTopKeywordsByGenre = function(data, genres, n){
+    
+    if ('All' %in% genres)
+        unique_movies_genre = data
+    else
+        unique_movies_genre = data[which(data$genre %in% genres),]
+    
+    keywords_genres_graph = distribution_of_keywords(unique_movies_genre)[1:n,]
+}
+
 ################################### ALL FOUR FILTERS ######################################
 
 getMoviesFromFilter = function(data, keywords_subset, keywords, genres, runtime, certificates){

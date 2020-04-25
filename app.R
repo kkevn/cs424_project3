@@ -40,8 +40,17 @@ print(paste0("---- unique movies, n=", unique_films))
 
 # get list of movies where none is duplicated (used for times where you only want to account for a movie once, such as runtime average)
 unique_movies <- subset(data, !duplicated(subset(data, select = movie)))
+
+# associate movie names with year, month, genre for the keywords
 movie_year_map = hashmap(unique_movies$movie, unique_movies$year)
+movie_month_map = hashmap(unique_movies$movie, as.character(unique_movies$month))
+movie_genre_map = hashmap(unique_movies$movie, as.character(unique_movies$genre))
+
+
 keywords_subset$year = movie_year_map[[keywords_subset$movie]]
+keywords_subset$month = movie_month_map[[keywords_subset$movie]]
+keywords_subset$genre = movie_genre_map[[keywords_subset$movie]]
+
 
 # get min and max years
 min_year_all <- min(data$year)
@@ -62,14 +71,20 @@ print(paste0("---- runtimes range from: ", min_runtime_all, "-", max_runtime_all
 load_data(min_year_all, max_year_all, min_decade_all, max_decade_all, min_runtime_all, max_runtime_all)
 
 # get a count of movies & distribution of things for the entire data (of just unique movies)
+print('Getting by Year')
 by_year <- number_films_per_year(unique_movies)
+print('Getting by Decade')
 by_decade <- number_films_per_decade(unique_movies) # takes a minute to calculate decades
+print('Getting by Month')
 by_month <- number_films_per_month(unique_movies)
+print('Getting by Runtime')
 by_runtime <- distribution_of_runtimes(unique_movies)
+print('Getting by Certificate')
 by_certificates <- distribution_of_certificates(unique_movies)
+print('Getting by Genre')
 by_genre <- distribution_of_genres(unique_movies)
-n = 10
-by_keywords <- distribution_of_keywords(keywords_subset, n)
+print('Getting by Keyword')
+by_keywords <- distribution_of_keywords(keywords_subset)
 
 # get the averages for films per year, month, and runtime of entire (unique) data
 unique_years = as.numeric(count(by_year))
@@ -122,26 +137,28 @@ ui = dashboardPage(skin = "yellow",
                    # top N input
                    numericInput(inputId = "input_top_n",
                                 label = "Select Top N:",
-                                min = 10, max = 56048, value = 10),
+                                min = 10, max = 56048, value = 10, step = 1),
 
                    # keyword input
-                   textInput(inputId = "input_keyword",
-                             label = "Select a Keyword:",
-                             value = "", placeholder = "comma separate for more"),
-
-                   sidebarMenu(
-                     menuItem("* leave blank for all keywords", tabName = "cheapBlankSpace", icon = NULL),
-                     menuItem("", tabName = "cheapBlankSpace", icon = NULL)),
+                   selectInput(inputId = "input_keyword",
+                             label = "Select a Keyword(s):",
+                             choices = c('All', as.character(by_keywords$keyword)),
+                            multiple = TRUE,
+                            selected = c('All')),
 
                    # genre input
                    selectInput(inputId = "input_genre",
-                               label = "Select a Genre:",
-                               choices = by_genre[1]),
+                               label = "Select a Genre(s):",
+                               choices = c('All', as.character(by_genre$genre)), 
+                               multiple = TRUE,
+                               selected = c('All')),
 
                    # certificate input
                    selectInput(inputId = "input_certificate",
-                               label = "Select a Certificate:",
-                               choices = c("All certificates", by_certificates[1])),
+                               label = "Select a Certificate(s):",
+                               choices =  c('All', by_certificates[1]),
+                               multiple = TRUE,
+                               selected = c('All')),
 
                    sidebarMenu(
                      menuItem("", tabName = "cheapBlankSpace", icon = NULL)),
@@ -175,7 +192,7 @@ ui = dashboardPage(skin = "yellow",
                                 }
     '))),
     
-    column(4,
+    column(5,
            box(title = "Overall Distribution of Films", width = 12, height = 850, solidHeader = TRUE, status = "warning", color = "yellow",
 
                tabsetPanel(
@@ -247,21 +264,15 @@ ui = dashboardPage(skin = "yellow",
         ),
     
     # sizing is weird on these boxes
-    column(4, 
+    column(2, 
            fluidRow(
-             infoBoxOutput("info_year", width = 5)
-           ),
-           fluidRow(
-             infoBoxOutput("info_month", width = 5)
-           ),
-           fluidRow(
-             infoBoxOutput("info_runtime", width = 5)
-           ),
-           fluidRow(
-             infoBoxOutput("info_total", width = 5)
+               column(12, infoBoxOutput("info_year")),
+               column(12, infoBoxOutput("info_month")),
+               column(12, infoBoxOutput("info_runtime")),
+               column(12, infoBoxOutput("info_total"))
            )
     ),
-    column(4,
+    column(5,
            box(title = "Distribution of Films by Selected Genre(s)", width = 12, height = 850, solidHeader = TRUE, status = "warning", color = "yellow",
 
                tabsetPanel(
@@ -281,7 +292,7 @@ ui = dashboardPage(skin = "yellow",
                                      tabPanel("Bar Plot", plotOutput("genre_by_decade"))
                             ),
                             tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", dataTableOutput("genre_by_month_table"))
+                                     tabPanel("Tabular Format", dataTableOutput("genre_by_decade_table"))
                             )
                           ) #Close inner tabsetPanel
                  ),
@@ -291,7 +302,7 @@ ui = dashboardPage(skin = "yellow",
                                      tabPanel("Bar Plot", plotOutput("genre_by_month"))
                             ),
                             tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", h1("table here"))
+                                     tabPanel("Tabular Format", dataTableOutput("genre_by_month_table"))
                             )
                           ) #Close inner tabsetPanel
                  ),
@@ -301,7 +312,7 @@ ui = dashboardPage(skin = "yellow",
                                      tabPanel("Bar Plot", plotOutput("genre_by_year_percent"))
                             ),
                             tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", h1("table here"))
+                                     tabPanel("Tabular Format", dataTableOutput("genre_by_year_percent"))
                             )
                           ) #Close inner tabsetPanel
                  ),
@@ -311,7 +322,7 @@ ui = dashboardPage(skin = "yellow",
                                      tabPanel("Bar Plot", plotOutput("genre_by_decade_percent"))
                             ),
                             tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", h1("table here"))
+                                     tabPanel("Tabular Format", dataTableOutput("genre_by_decade_percent_table"))
                             )
                           ) #Close inner tabsetPanel
                  ),
@@ -321,7 +332,7 @@ ui = dashboardPage(skin = "yellow",
                                      tabPanel("Bar Plot", plotOutput("genre_by_month_percent"))
                             ),
                             tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", h1("table here"))
+                                     tabPanel("Tabular Format", dataTableOutput("genre_by_month_percent_table"))
                             )
                           ) #Close inner tabsetPanel
                  ),
@@ -331,7 +342,7 @@ ui = dashboardPage(skin = "yellow",
                                      tabPanel("Bar Plot", plotOutput("genre_by_runtime"))
                             ),
                             tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", h1("table here"))
+                                     tabPanel("Tabular Format", dataTableOutput("genre_by_runtime_table"))
                             )
                           ) #Close inner tabsetPanel
                  ),
@@ -341,7 +352,7 @@ ui = dashboardPage(skin = "yellow",
                                      tabPanel("Bar Plot", plotOutput("genre_by_certificate"))
                             ),
                             tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", h1("table here"))
+                                     tabPanel("Tabular Format", dataTableOutput("genre_by_certificate_table"))
                             )
                           ) #Close inner tabsetPanel
                  ),
@@ -351,7 +362,7 @@ ui = dashboardPage(skin = "yellow",
                                      tabPanel("Bar Plot", plotOutput("genre_by_top_keywords"))
                             ),
                             tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", h1("table here"))
+                                     tabPanel("Tabular Format", dataTableOutput("genre_by_top_keywords_table"))
                             )
                           ) #Close inner tabsetPanel
                  )
@@ -368,11 +379,13 @@ ui = dashboardPage(skin = "yellow",
 
 server = function(input, output, session) {
   
+    # Logic to determine if the app started and which was the last input done
     first_view = reactiveVal(TRUE)
     last_decade = reactiveVal(0)
     last_year = reactiveVal(0)
     decade_on = reactiveVal(FALSE)
     year_on = reactiveVal(FALSE)
+    last_genre = reactiveVal(c()) # TODO
     
     which_on = eventReactive(c(input$input_year, input$input_decade), {
         year = input$input_year
@@ -383,6 +396,13 @@ server = function(input, output, session) {
         
         last_year(year)
         last_decade(decade)
+    })
+    
+    # Update keywords when N changes 
+    observeEvent(input$input_top_n, {
+        N = input$input_top_n
+        new_choices = c('All', as.character(by_keywords$keyword[1:N]))
+        updateSelectInput(session, "input_keyword", choices = new_choices, selected = c('All'))
     })
     
   observeEvent(input$about_info, {
@@ -477,17 +497,10 @@ server = function(input, output, session) {
     )
   })
   
-  ## TABLE VERSIONS OF GENRE PLOTS ###
-  output$tbl_genres <- DT::renderDataTable({
-      DT::datatable(by_genre, options = list(dom = 'f, t, i, p, r', pageLength = 12), rownames = FALSE) %>%
-          DT::formatStyle("genre", fontSize = "125%") %>%
-          DT::formatStyle("count", fontSize = "125%")
-  })
+  ########## UPDATE OVERVIEW GRAPHS when any of the filters change#######
   
-  ########## WHEN YEAR/DECADE INPUT CHANGES, UPDATE OVERVIEW GRAPHS#######
-  
-  observeEvent(c(input$input_year, input$input_decade), {
-      if (first_view()){
+  observeEvent(c(input$input_year, input$input_decade, input$input_genre, input$input_keyword, input$input_certificate, input$input_runtime), {
+      if (first_view()){ # if first view, then all the years
           output$overview_year_plot = renderPlot({
               plotYearlyFilms(unique_movies)
           })
@@ -516,46 +529,50 @@ server = function(input, output, session) {
           
       } else {
           
+          filtered_data = getMoviesFromFilter(unique_movies, keywords_subset, input$input_keyword, input$input_genre, input$input_runtime, input$input_certificate)
+          
+          ###################### Update Plos ##############
+          
           output$overview_year_plot = renderPlot({
               if (year_on())
-                  plotYearlyFilms(unique_movies %>% filter(year == input$input_year))
+                  plotYearlyFilms(filtered_data %>% filter(year == input$input_year))
               else
-                  plotFilmsByDecade(unique_movies, input$input_decade)
+                  plotFilmsByDecade(filtered_data, input$input_decade)
           })
           
           output$overview_month_plot= renderPlot({
               if (year_on())
-                plotMonthPerGivenYear(unique_movies, input$input_year)
+                plotMonthPerGivenYear(filtered_data, input$input_year)
               else 
-                plotMonthPerGivenDecade(unique_movies, input$input_decade)
+                plotMonthPerGivenDecade(filtered_data, input$input_decade)
           })
           
           output$overview_runtime_plot = renderPlot({
               if (year_on())
-                plotRuntimePerGivenYear(unique_movies, input$input_year)
+                plotRuntimePerGivenYear(filtered_data, input$input_year)
               else
-                plotRuntimePerGivenDecade(unique_movies, input$input_decade)
+                plotRuntimePerGivenDecade(filtered_data, input$input_decade)
           })
           
           output$overview_genre_plot = renderPlot({
               if (year_on())
-                  plotGenrePerGivenYear(unique_movies, input$input_year)
+                  plotGenrePerGivenYear(filtered_data, input$input_year)
               else
-                  plotGenrePerGivenDecade(unique_movies, input$input_decade)
+                  plotGenrePerGivenDecade(filtered_data, input$input_decade)
           })
           
           output$overview_certificate_plot = renderPlot({
               if (year_on())
-                plotCertificatesPerGivenYear(unique_movies, input$input_year)
+                plotCertificatesPerGivenYear(filtered_data, input$input_year)
               else
-                plotCertificatesPerGivenDecade(unique_movies, input$input_decade)
+                plotCertificatesPerGivenDecade(filtered_data, input$input_decade)
           })
           
           output$overview_top_keywords_plot = renderPlot({
               if (year_on())
-                plotTopKeywordsPerGivenYear(keywords_subset, input$input_year, input$input_top_n)
+                plotTopKeywordsPerGivenYear(keywords_subset %>% filter(movie %in% filtered_data$movie), input$input_year, input$input_top_n)
               else
-                plotTopKeywordsPerGivenDecade(keywords_subset, input$input_decade, input$input_top_n)
+                plotTopKeywordsPerGivenDecade(keywords_subset %>% filter(movie %in% filtered_data$movie), input$input_decade, input$input_top_n)
           })
       }
   })
@@ -565,58 +582,91 @@ server = function(input, output, session) {
   ## B REQUIREMENTS BELOW
   ##
   ##
-  ########## WHEN YEAR/DECADE INPUT CHANGES, UPDATE GENRE GRAPHS#######
+  
+ ########## UPDATE GENRE PLOTS/TABLES when any of the filters change ##############
   
   observeEvent(input$input_genre, {
+      
       genre = input$input_genre
       
+      filtered_data = getMoviesFromFilter(unique_movies, keywords_subset, input$input_keyword, genre, input$input_runtime, input$input_certificate)
+      
+      ####################### Update Plots ##############
+      
       output$genre_by_year = renderPlot({
-          plotYearbyGenre(unique_movies, genre)
+          plotYearByGenre(filtered_data, genre)
       })
       
       output$genre_by_decade = renderPlot({
-          plotDecadeByGenre(unique_movies, genre)
+          plotDecadeByGenre(filtered_data, genre)
       })
       
       output$genre_by_month = renderPlot({
-          plotMonthByGenre(unique_movies, genre)
+          plotMonthByGenre(filtered_data, genre)
       })
       
       output$genre_by_year_percent = renderPlot({
-          plotYearPercentageByGenre(unique_movies, genre, by_year)
+          plotYearPercentageByGenre(filtered_data, genre, by_year)
       })
       
       output$genre_by_decade_percent  = renderPlot({
-          plotDecadePercentageByGenre(unique_movies, genre, by_decade)
+          plotDecadePercentageByGenre(filtered_data, genre, by_decade)
       })
       
       output$genre_by_month_percent = renderPlot({
-          plotMonthPercentageByGenre(unique_movies, genre, by_month)
+          plotMonthPercentageByGenre(filtered_data, genre, by_month)
       })
       
       output$genre_by_runtime = renderPlot({
-          
+          plotRuntimeByGenre(filtered_data, genre)
       })
       
       output$genre_by_certificate = renderPlot({
-          
+          plotCertificatesByGenre(filtered_data, genre)
       })
       
       output$genre_by_top_keywords = renderPlot({
-          
+          plotTopKeywordsByGenre(keywords_subset %>% filter(movie %in% filtered_data$movie), genre, input$input_top_n)
       })
-  })
-  
-## WHEN GENRE CHANGES, UPDATE TABLES ###   
-  
-  observeEvent(input$input_genre, {
-      genre = input$input_genre
+      
+      ################### Update tables ######################
       
       output$genre_by_year_table = DT::renderDataTable({
-         years_genre_table <- tableYearbyGenre(unique_movies, genre)
+          tableYearByGenre(filtered_data, genre)
+      })
+      
+      output$genre_by_decade_table = DT::renderDataTable({
+          tableDecadeByGenre(filtered_data, genre)
+      })
+      
+      output$genre_by_month_table = DT::renderDataTable({
+          tableMonthByGenre(filtered_data, genre)
+      })
+      
+      output$genre_by_year_percent_table = DT::renderDataTable({
+          tableYearPercentageByGenre(filtered_data, genre, by_year)
+      })
+      
+      output$genre_by_decade_percent_table  = DT::renderDataTable({
+          tableDecadePercentageByGenre(filtered_data, genre, by_decade)
+      })
+      
+      output$genre_by_month_percent_table = DT::renderDataTable({
+          tableMonthPercentageByGenre(filtered_data, genre, by_month)
+      })
+      
+      output$genre_by_runtime_table = DT::renderDataTable({
+          tableRuntimeByGenre(filtered_data, genre)
+      })
+      
+      output$genre_by_certificate_table = DT::renderDataTable({
+          tableCertificatesByGenre(filtered_data, genre)
+      })
+      
+      output$genre_by_top_keywords_table = DT::renderDataTable({
+          tableTopKeywordsByGenre(keywords_subset %>% filter(movie %in% filtered_data$movie), genre, input$input_top_n)
       })
   })
-  
 }
 
 shinyApp(ui=ui, server=server)

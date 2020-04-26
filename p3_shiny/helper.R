@@ -166,7 +166,7 @@ distribution_of_keywords = function(table) {
 ########################## FUNCTIONS FOR OVERVIEW YEAR PLOTS #####################################
 
 plotYearlyFilms = function(data){
-    films_per_year= number_films_per_year(data) %>% filter(count > 0) 
+    films_per_year= number_films_per_year(data) %>% filter(count > 0, year > 0)
     
     use_factor = if (nrow(films_per_year) > 1) FALSE else TRUE # to check if only single year
     
@@ -176,6 +176,11 @@ plotYearlyFilms = function(data){
         theme(text = element_text(size=20))
 }
 
+tableYearlyFilms = function(data){
+    number_films_per_year(data) %>% 
+        filter(count > 0, year > 0) %>% 
+        select(year, count)
+}
 
 
 
@@ -213,10 +218,34 @@ plotMonthPerGivenYear <- function(data, year)
 }  
 
 
+tableMonthPerGivenYear <- function(data, year)
+{
+    monthly_films_all = number_films_per_month(data)
+    
+    if (is.null(year)) # no year given, so all the data
+    { 
+        monthly_films_all
+    } 
+    else # year given, need to compare year with overall
+    { 
+        year_films = data[which(data$year == year),]
+        
+        monthly_films_year = number_films_per_month(year_films) 
+        
+        combined_data = cbind(monthly_films_year, monthly_films_all$count)
+        
+        colnames(combined_data)[2:3] = c(year, 'All')
+        
+        combined_data
+        
+    }
+} 
+
+
 
 plotRuntimePerGivenYear <- function(data, year)
 {
-    runtime_distribution_all = distribution_of_runtimes(data)
+    runtime_distribution_all = distribution_of_runtimes(data) %>% filter(runtime >= 60)
     
     if (is.null(year)) # no year given, so all the data
     { 
@@ -232,7 +261,7 @@ plotRuntimePerGivenYear <- function(data, year)
         
         runtime_distribution_all = runtime_distribution_all %>% mutate(compare='All')
         
-        combined_data = rbind(runtime_distribution_year, runtime_distribution_all)
+        combined_data = rbind(runtime_distribution_year, runtime_distribution_all) %>% filter(runtime >= 60)
         
         ggplot(combined_data, aes(x=runtime, y=count, color=compare)) +
             geom_point() + labs(title = "Runtime Distribution", x = "Runtime", y = "Number of Films") +
@@ -241,6 +270,35 @@ plotRuntimePerGivenYear <- function(data, year)
     }
     
 }
+
+tableRuntimePerGivenYear <- function(data, year)
+{
+    runtime_distribution_all = distribution_of_runtimes(data) %>% filter(runtime >= 60)
+    
+    if (is.null(year)) # no year given, so all the data
+    { 
+        runtime_distribution_all
+    } 
+    else # year given, need to compare year with overall
+    { 
+        year_films = data[which(data$year == year),]
+        
+        runtime_distribution_year =  distribution_of_runtimes(year_films)  %>% filter(runtime >= 60) %>% arrange(runtime)
+        
+        runtime_distribution_all = runtime_distribution_all %>% 
+            select(runtime, count) %>% 
+            filter(runtime %in% runtime_distribution_year$runtime) %>%
+            arrange(runtime)
+        
+        combined_data = cbind(runtime_distribution_year, runtime_distribution_all$count) 
+        
+        colnames(combined_data)[2:3] = c(year, 'All')
+        
+        combined_data
+    }
+    
+}
+
 
 
 plotGenrePerGivenYear <- function(data, year)
@@ -274,6 +332,35 @@ plotGenrePerGivenYear <- function(data, year)
     }
 }
 
+
+tableGenrePerGivenYear <- function(data, year)
+{
+    genre_distribution_all = distribution_of_genres(data)
+    
+    if (is.null(year)) # no year given, so all the data
+    { 
+        genre_distribution_all
+    } 
+    else # year given, need to compare year with overall
+    { 
+        year_films = data[which(data$year == year),]
+        
+        genre_distribution_year =  distribution_of_genres(year_films) %>% arrange(genre)
+        
+        genre_distribution_all = genre_distribution_all %>% 
+            filter(genre %in% genre_distribution_year$genre) %>% arrange(genre)
+        
+        combined_data = cbind(genre_distribution_year, genre_distribution_all$count)
+        
+        colnames(combined_data)[2:3] = c(year, 'All')
+        
+        combined_data
+        
+    }
+}
+
+
+
 plotCertificatesPerGivenYear <- function(data, year)
 {
     certificate_distribution_all = distribution_of_certificates(data)
@@ -306,6 +393,38 @@ plotCertificatesPerGivenYear <- function(data, year)
     }
 }
 
+
+tableCertificatesPerGivenYear <- function(data, year)
+{
+    certificate_distribution_all = distribution_of_certificates(data)
+    
+    if (is.null(year)) # no year given, so all the data
+    { 
+        certificate_distribution_all
+    } 
+    else # year given, need to compare year with overall
+    { 
+        year_films = data[which(data$year == year),]
+        
+        certificate_distribution_year =  distribution_of_certificates(year_films) %>% arrange(rating)
+        
+        certificate_distribution_all = certificate_distribution_all %>% 
+            filter(rating %in% certificate_distribution_year$rating) %>% 
+            arrange(rating)
+        
+        combined_data = cbind(certificate_distribution_year, certificate_distribution_all$count)
+        
+        colnames(combined_data)[2:3] = c(year, 'All')
+        
+        combined_data
+        
+    }
+}
+
+
+
+
+
 plotTopKeywordsPerGivenYear <- function(movies_with_keywords, year, n)
 {
     
@@ -325,8 +444,10 @@ plotTopKeywordsPerGivenYear <- function(movies_with_keywords, year, n)
         
         keyword_distribution_year =  distribution_of_keywords(year_films)[1:n,] %>% mutate(compare=year)
         
-        keyword_distribution_all = distribution_of_keywords(movies_with_keywords)[1:10,] %>%
-            filter(keyword %in% keyword_distribution_year$keyword) %>% mutate(compare='All') 
+        
+        keyword_distribution_all = distribution_of_keywords(movies_with_keywords) %>% mutate(compare='All') %>%
+            filter(keyword %in% keyword_distribution_year$keyword) 
+        
         
         combined_data = rbind(keyword_distribution_year, keyword_distribution_all)
         
@@ -340,6 +461,31 @@ plotTopKeywordsPerGivenYear <- function(movies_with_keywords, year, n)
     }
 }
 
+tableTopKeywordsPerGivenYear <- function(movies_with_keywords, year, n)
+{
+    
+    if (is.null(year)) # no year given, so all the data (keywords_subset)
+    { 
+        distribution_of_keywords(movies_with_keywords)[1:n,]
+    } 
+    else # year given, need to compare year with overall
+    { 
+        year_films = movies_with_keywords[which(movies_with_keywords$year == year),]
+        
+        keyword_distribution_year =  distribution_of_keywords(year_films)[1:n,] %>% arrange(keyword)
+        
+        keyword_distribution_all = distribution_of_keywords(movies_with_keywords) %>%
+            filter(keyword %in% keyword_distribution_year$keyword) %>% arrange(keyword) 
+        
+        combined_data = cbind(keyword_distribution_year, keyword_distribution_all$count)
+        
+        colnames(combined_data)[2:3] = c(year, 'All')
+        
+        combined_data
+        
+        
+    }
+}
 
 
 
@@ -357,6 +503,14 @@ plotFilmsByDecade = function(data, decade){
         geom_bar(stat = "identity", fill = "#f3ce13") + 
         labs(title = paste("Films in the ", decade, "'s", sep=''), x = "Decade", y = "Number of Films") +
         theme(text = element_text(size=20))
+}
+
+tableFilmsByDecade = function(data, decade){
+    decade_films = data %>% select(year) %>% 
+        filter(year >= decade & year < decade + 10) %>% 
+        summarise(count=n()) %>% 
+        mutate(decade=decade)
+    decade_films
 }
 
 
@@ -393,11 +547,35 @@ plotMonthPerGivenDecade <- function(data, decade)
     }
 }
 
+tableMonthPerGivenDecade <- function(data, decade)
+{
+    monthly_films_all = number_films_per_month(data)
+    
+    if (is.null(decade)) # no decade given, so all the data
+    { 
+        monthly_films_all
+    } 
+    else # decade given, need to compare year with overall
+    { 
+        decade_films <- subset(data, year >= decade & year < decade + 10)
+        
+        monthly_films_decade = number_films_per_month(decade_films) %>% arrange(month)
+        
+        monthly_films_all = monthly_films_all %>% arrange(month)
+        
+        combined_data = cbind(monthly_films_decade, monthly_films_all$count)
+        
+        colnames(combined_data)[2:3] = c(decade, 'All')
+        
+        combined_data
+    }
+}
+
 
 
 plotRuntimePerGivenDecade <- function(data, decade)
 {
-    runtime_distribution_all = distribution_of_runtimes(data)
+    runtime_distribution_all = distribution_of_runtimes(data) %>% filter(runtime >= 60)
     
     if (is.null(decade)) # no decade given, so all the data
     { 
@@ -409,11 +587,12 @@ plotRuntimePerGivenDecade <- function(data, decade)
     { 
         decade_films <- subset(data, year >= decade & year < decade + 10)
         
-        runtime_distribution_decade =  distribution_of_runtimes(decade_films) %>% mutate(compare=decade)
+        runtime_distribution_decade =  distribution_of_runtimes(decade_films) %>% mutate(compare=decade) %>% arrange(runtime)
         
-        runtime_distribution_all = runtime_distribution_all %>% mutate(compare='All')
+        runtime_distribution_all = runtime_distribution_all %>% mutate(compare='All') %>%
+            filter(runtime %in% runtime_distribution_decade$runtime) %>% arrange(runtime)
         
-        combined_data = rbind(runtime_distribution_decade, runtime_distribution_all)
+        combined_data = rbind(runtime_distribution_decade, runtime_distribution_all) %>% filter(runtime >= 60)
         
         ggplot(combined_data, aes(x=runtime, y=count, color=compare)) +
             geom_point() + labs(title = "Runtime Distribution", x = "Runtime", y = "Number of Films") +
@@ -423,6 +602,35 @@ plotRuntimePerGivenDecade <- function(data, decade)
     
 }
 
+tableRuntimePerGivenDecade <- function(data, decade)
+{
+    runtime_distribution_all = distribution_of_runtimes(data) %>% filter(runtime >= 60)
+    
+    if (is.null(decade)) # no decade given, so all the data
+    { 
+        runtime_distribution_all
+    } 
+    else # decade given, need to compare decade with overall
+    { 
+        decade_films <- subset(data, year >= decade & year < decade + 10)
+        
+        runtime_distribution_decade =  distribution_of_runtimes(decade_films) %>% 
+            filter(runtime >= 60) %>% 
+            arrange(runtime)
+        
+        runtime_distribution_all = runtime_distribution_all %>% 
+            filter(runtime %in% runtime_distribution_decade$runtime) %>%
+            arrange(runtime)
+        
+        combined_data = cbind(runtime_distribution_decade, runtime_distribution_all$count) 
+        
+        colnames(combined_data)[2:3] = c(decade, 'All')
+        
+        combined_data
+        
+    }
+    
+}
 
 plotGenrePerGivenDecade <- function(data, decade)
 {
@@ -454,6 +662,34 @@ plotGenrePerGivenDecade <- function(data, decade)
         
     }
 }
+
+tableGenrePerGivenDecade <- function(data, decade)
+{
+    genre_distribution_all = distribution_of_genres(data)
+    
+    if (is.null(decade)) # no decade given, so all the data
+    { 
+        genre_distribution_all
+    } 
+    else # decade given, need to compare decade with overall
+    { 
+        decade_films = subset(data, year >= decade & year < decade + 10)
+        
+        genre_distribution_decade =  distribution_of_genres(decade_films) %>% arrange(genre)
+        
+        genre_distribution_all = genre_distribution_all %>% 
+            filter(genre %in% genre_distribution_decade$genre) %>% 
+            arrange(genre)
+        
+        combined_data = cbind(genre_distribution_decade, genre_distribution_all$count)
+        
+        colnames(combined_data)[2:3] = c(decade, 'All')
+        
+        combined_data
+        
+    }
+}
+
 
 
 
@@ -490,6 +726,34 @@ plotCertificatesPerGivenDecade <- function(data, decade)
     }
 }
 
+tableCertificatesPerGivenDecade <- function(data, decade)
+{
+    certificate_distribution_all = distribution_of_certificates(data)
+    
+    if (is.null(decade)) # no decade given, so all the data
+    { 
+        
+        certificate_distribution_all
+    } 
+    else # decade given, need to compare decade with overall
+    { 
+        decade_films = subset(data, year >= decade & year < decade + 10)
+        
+        certificate_distribution_decade =  distribution_of_certificates(decade_films) %>% arrange(rating)
+        
+        certificate_distribution_all = certificate_distribution_all %>% 
+            filter(rating %in% certificate_distribution_decade$rating) %>% 
+            arrange(rating)
+        
+        combined_data = cbind(certificate_distribution_decade, certificate_distribution_all$count)
+        
+        
+        colnames(combined_data)[2:3] = c(decade, 'All')
+        
+        combined_data
+    }
+}
+
 
 
 plotTopKeywordsPerGivenDecade <- function(movies_with_keywords, decade, n)
@@ -511,7 +775,7 @@ plotTopKeywordsPerGivenDecade <- function(movies_with_keywords, decade, n)
         
         keyword_distribution_decade =  distribution_of_keywords(decade_films)[1:n,] %>% mutate(compare=decade)
         
-        keyword_distribution_all = distribution_of_keywords(movies_with_keywords)[1:n,] %>%
+        keyword_distribution_all = distribution_of_keywords(movies_with_keywords) %>%
             filter(keyword %in% keyword_distribution_decade$keyword) %>% mutate(compare='All') 
         
         combined_data = rbind(keyword_distribution_decade, keyword_distribution_all)
@@ -527,8 +791,36 @@ plotTopKeywordsPerGivenDecade <- function(movies_with_keywords, decade, n)
 }
 
 
-########################## FUNCTIONS FOR GENRE PLOTS #####################################
-########################## FUNCTIONS FOR GENRE PLOTS #####################################
+tableTopKeywordsPerGivenDecade <- function(movies_with_keywords, decade, n)
+{
+    
+    if (is.null(decade)) # no decade given, so all the data (keywords_subset)
+    { 
+        distribution_of_keywords(movies_with_keywords)[1:n,]
+        
+    } 
+    else # decade given, need to compare year with overall
+    { 
+        decade_films = subset(movies_with_keywords, year >= decade & year < decade + 10)
+        
+        keyword_distribution_decade =  distribution_of_keywords(decade_films)[1:n,] %>% arrange(keyword)
+        
+        keyword_distribution_all = distribution_of_keywords(movies_with_keywords) %>%
+            filter(keyword %in% keyword_distribution_decade$keyword) %>% arrange(keyword)
+        
+        combined_data = cbind(keyword_distribution_decade, keyword_distribution_all$count)
+        
+        colnames(combined_data)[2:3] = c(decade, 'All')
+        
+        combined_data
+        
+    }
+}
+
+
+
+########################## FUNCTIONS FOR GENRE PLOTS/TABLES #####################################
+########################## FUNCTIONS FOR GENRE PLOTS/TABLES #####################################
 
 plotYearByGenre <- function(data, genres)
 {
@@ -545,6 +837,18 @@ plotYearByGenre <- function(data, genres)
         labs(title = paste(paste(genres, collapse='/'), "Films by Year", sep=" "), x = "Year", y = "Number of Films") +
         theme(text = element_text(size=20))
 }
+
+tableYearByGenre <- function(data, genres)
+{
+    if ('All' %in% genres)
+        unique_movies_genre = data
+    else
+        unique_movies_genre = data[which(data$genre %in% genres),]
+    
+    number_films_per_year(unique_movies_genre) %>% filter(year > 0)
+}
+
+
 
 
 
@@ -566,6 +870,19 @@ plotDecadeByGenre <- function(data, genres)
 }
 
 
+tableDecadeByGenre <- function(data, genres)
+{
+    if ('All' %in% genres)
+        unique_movies_genre = data
+    else
+        unique_movies_genre = data[which(data$genre %in% genres),]
+    
+    number_films_per_decade(unique_movies_genre)
+}
+
+
+
+
 plotMonthByGenre <- function(data, genres)
 {
     
@@ -585,6 +902,17 @@ plotMonthByGenre <- function(data, genres)
 }
 
 
+tableMonthByGenre <- function(data, genres)
+{
+    if ('All' %in% genres)
+        unique_movies_genre = data
+    else
+        unique_movies_genre = data[which(data$genre %in% genres),]
+    
+    number_films_per_month(unique_movies_genre)
+}
+
+
 
 plotYearPercentageByGenre <- function(data, genres, by_year)
 {
@@ -598,7 +926,7 @@ plotYearPercentageByGenre <- function(data, genres, by_year)
     
     year_genres_graph$total <- (by_year %>% filter(year %in% year_genres_graph$year) %>% arrange(year))$count 
     
-    year_genres_graph = year_genres_graph %>% mutate(percent=count/total * 100)
+    year_genres_graph = year_genres_graph %>% mutate(percent=count/total * 100) %>% filter(year > 0)
     
     ggplot(year_genres_graph, aes(x= year, y=percent)) + 
         geom_bar(stat = "identity", fill = "#f3ce13") + 
@@ -607,6 +935,23 @@ plotYearPercentageByGenre <- function(data, genres, by_year)
               axis.text.x = element_text(angle=45, hjust=1)
         )
 }
+
+
+tableYearPercentageByGenre <- function(data, genres, by_year)
+{
+    
+    if ('All' %in% genres)
+        unique_movies_genre = data
+    else
+        unique_movies_genre = data[which(data$genre %in% genres),]
+    
+    year_genres_graph = number_films_per_year(unique_movies_genre) %>% arrange(year)
+    
+    year_genres_graph$total <- (by_year %>% filter(year %in% year_genres_graph$year) %>% arrange(year))$count 
+    
+    year_genres_graph %>% mutate(percent=count/total * 100) %>% select(year, percent) %>% filter(year > 0)
+}
+
 
 
 plotDecadePercentageByGenre <- function(data, genres, by_decade)
@@ -629,6 +974,22 @@ plotDecadePercentageByGenre <- function(data, genres, by_decade)
         theme(text = element_text(size=20),
               axis.text.x = element_text(angle=45, hjust=1)
         )
+}
+
+
+tableDecadePercentageByGenre <- function(data, genres, by_decade)
+{
+    
+    if ('All' %in% genres)
+        unique_movies_genre = data
+    else
+        unique_movies_genre = data[which(data$genre %in% genres),]
+    
+    decade_genres_graph = number_films_per_decade(unique_movies_genre) %>% arrange(decade)
+    
+    decade_genres_graph$total <- (by_decade %>% filter(decade %in% decade_genres_graph$decade) %>% arrange(decade))$count 
+    
+    decade_genres_graph %>% mutate(percent=count/total * 100) %>% select(decade, percent)
 }
 
 
@@ -656,6 +1017,21 @@ plotMonthPercentageByGenre <- function(data, genres, by_month)
 }
 
 
+tableMonthPercentageByGenre <- function(data, genres, by_month)
+{
+    
+    if ('All' %in% genres)
+        unique_movies_genre = data
+    else
+        unique_movies_genre = data[which(data$genre %in% genres),]
+    
+    month_genres_graph = number_films_per_month(unique_movies_genre) %>% arrange(month)
+    
+    month_genres_graph$total <- (by_month %>% filter(month %in% month_genres_graph$month) %>% arrange(month))$count 
+    
+    month_genres_graph %>% mutate(percent=count/total * 100) %>% select(month, percent)
+}
+
 
 plotRuntimeByGenre <- function(data, genres)
 {
@@ -664,13 +1040,24 @@ plotRuntimeByGenre <- function(data, genres)
     else
         unique_movies_genre = data[which(data$genre %in% genres),]
     
-    runtime_genres_graph = distribution_of_runtimes(unique_movies_genre)
+    runtime_genres_graph = distribution_of_runtimes(unique_movies_genre) %>% filter(runtime >= 60)
     
     ggplot(runtime_genres_graph, aes(x=runtime, y=count)) + 
         geom_point() + 
         labs(title = paste(paste(genres, collapse='/'), "Films Runtime", sep=" "), x = "Runtime", y = "Number of Films") +
         theme(text = element_text(size=20))
     
+}
+
+
+tableRuntimeByGenre <- function(data, genres)
+{
+    if ('All' %in% genres)
+        unique_movies_genre = data
+    else
+        unique_movies_genre = data[which(data$genre %in% genres),]
+    
+    distribution_of_runtimes(unique_movies_genre) %>% filter(runtime >= 60)
 }
 
 
@@ -691,10 +1078,18 @@ plotCertificatesByGenre <- function(data, genres)
     
 }
 
+tableCertificatesByGenre <- function(data, genres)
+{
+    if ('All' %in% genres)
+        unique_movies_genre = data
+    else
+        unique_movies_genre = data[which(data$genre %in% genres),]
+    
+    distribution_of_certificates(unique_movies_genre)
+}
 
 
 plotTopKeywordsByGenre = function(data, genres, n){
-    
     if ('All' %in% genres)
         unique_movies_genre = data
     else
@@ -708,102 +1103,6 @@ plotTopKeywordsByGenre = function(data, genres, n){
         theme(text = element_text(size=20)) + coord_flip()
 }
 
-
-tableYearbyGenre <- function(data, genres)
-{
-    if ('All' %in% genres)
-        unique_movies_genre = data
-    else
-        unique_movies_genre = data[which(data$genre %in% genres),]
-    
-    year_films_specific_genre = number_films_per_year(unique_movies_genre)
-}
-
-tableDecadebyGenre <- function(data, genres)
-{
-    if ('All' %in% genres)
-        unique_movies_genre = data
-    else
-        unique_movies_genre = data[which(data$genre %in% genres),]
-    
-    decade_films_specific_genre = number_films_per_decade(unique_movies_genre)
-}
-
-tableMonthbyGenre <- function(data, genres)
-{
-    if ('All' %in% genres)
-        unique_movies_genre = data
-    else
-        unique_movies_genre = data[which(data$genre %in% genres),]
-    
-    month_films_specific_genre = number_films_per_month(unique_movies_genre)
-}
-
-tableYearPercentagehByGenre <- function(data, genres, by_year)
-{
-    
-    if ('All' %in% genres)
-        unique_movies_genre = data
-    else
-        unique_movies_genre = data[which(data$genre %in% genres),]
-    
-    year_genres_graph = number_films_per_year(unique_movies_genre) %>% arrange(year)
-    
-    year_genres_graph$total <- (by_year %>% filter(year %in% year_genres_graph$year) %>% arrange(year))$count 
-    
-    year_genres_table = year_genres_graph %>% mutate(percent=count/total * 100)
-}
-
-tableDecadePercentageByGenre <- function(data, genres, by_decade)
-{
-    
-    if ('All' %in% genres)
-        unique_movies_genre = data
-    else
-        unique_movies_genre = data[which(data$genre %in% genres),]
-    
-    decade_genres_graph = number_films_per_decade(unique_movies_genre) %>% arrange(decade)
-    
-    decade_genres_graph$total <- (by_decade %>% filter(decade %in% decade_genres_graph$decade) %>% arrange(decade))$count 
-    
-    decade_genres_table = decade_genres_graph %>% mutate(percent=count/total * 100)
-}
-
-tableMonthPercentageByGenre <- function(data, genres, by_month)
-{
-    
-    if ('All' %in% genres)
-        unique_movies_genre = data
-    else
-        unique_movies_genre = data[which(data$genre %in% genres),]
-    
-    month_genres_graph = number_films_per_month(unique_movies_genre) %>% arrange(month)
-    
-    month_genres_graph$total <- (by_month %>% filter(month %in% month_genres_graph$month) %>% arrange(month))$count 
-    
-    month_genres_table = month_genres_graph %>% mutate(percent=count/total * 100)
-}
-
-tableRuntimePercentageByGenre <- function(data, genres)
-{
-    if ('All' %in% genres)
-        unique_movies_genre = data
-    else
-        unique_movies_genre = data[which(data$genre %in% genres),]
-    
-    runtime_genres_table = distribution_of_runtimes(unique_movies_genre)
-}
-
-tableCertificatePercentageByGenre <- function(data, genres)
-{
-    if ('All' %in% genres)
-        unique_movies_genre = data
-    else
-        unique_movies_genre = data[which(data$genre %in% genres),]
-    
-    runtime_genres_table = distribution_of_certificates(unique_movies_genre)
-}
-
 tableTopKeywordsByGenre = function(data, genres, n){
     
     if ('All' %in% genres)
@@ -811,7 +1110,7 @@ tableTopKeywordsByGenre = function(data, genres, n){
     else
         unique_movies_genre = data[which(data$genre %in% genres),]
     
-    keywords_genres_graph = distribution_of_keywords(unique_movies_genre)[1:n,]
+    distribution_of_keywords(unique_movies_genre)[1:n,]
 }
 
 ################################### ALL FOUR FILTERS ######################################

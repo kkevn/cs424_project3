@@ -192,183 +192,197 @@ ui = dashboardPage(skin = "yellow",
                                 }
     '))),
     
-    column(5,
-           box(title = "Overall Distribution of Films", width = 12, height = 850, solidHeader = TRUE, status = "warning", color = "yellow",
-
-               tabsetPanel(
-                 tabPanel("by Year",
-                          tabsetPanel(
-                            tabPanel("Bar Plot",
-                                     tabPanel("Bar Plot", plotOutput("overview_year_plot"))
-                            ),
-                            tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", dataTableOutput("overview_year_table"))
-                            )
-                          ) #Close inner tabsetPanel
-                 ),
-                 tabPanel("by Month",
-                          tabsetPanel(
-                            tabPanel("Bar Plot",
-                                     tabPanel("Bar Plot", plotOutput("overview_month_plot"))
-                            ),
-                            tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", dataTableOutput("overview_month_table"))
-                            )
-                          ) #Close inner tabsetPanel
-                 ),
-                 tabPanel("by Runtime",
-                          tabsetPanel(
-                            tabPanel("Bar Plot",
-                                     tabPanel("Bar Plot", plotOutput("overview_runtime_plot"))
-                            ),
-                            tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", dataTableOutput("overview_runtime_table"))
-                            )
-                          ) #Close inner tabsetPanel
-                 ),
-                 tabPanel("by Certification",
-                          tabsetPanel(
-                            tabPanel("Bar Plot",
-                                     tabPanel("Bar Plot", plotOutput("overview_certificate_plot"))
-                            ),
-                            tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", dataTableOutput("overview_certificate_table"))
-                            )
-                          ) #Close inner tabsetPanel
-                 ),
-                 tabPanel("by Genre",
-                          tabsetPanel(
-                            tabPanel("Bar Plot",
-                                     tabPanel("Bar Plot", plotOutput("overview_genre_plot"))
-                            ),
-                            tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", dataTableOutput("overview_genre_table"))
-                            )
-                          ) #Close inner tabsetPanel
-                 ),
-                 tabPanel("by Top N Keywords",
-                          tabsetPanel(
-                            tabPanel("Bar Plot",
-                                     tabPanel("Bar Plot", plotOutput("overview_top_keywords_plot"))
-                            ),
-                            tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", dataTableOutput("overview_top_keywords_table"))
-                            )
-                          ) #Close inner tabsetPanel
+    column(6,
+           
+           fluidRow(
+             box(title = "Overall Distribution of Films", width = 12, height = 750, solidHeader = TRUE, status = "warning", color = "yellow",
+  
+                 tabsetPanel(
+                   tabPanel("by Year",
+                            tabsetPanel(
+                              tabPanel("Bar Plot",
+                                       tabPanel("Bar Plot", plotOutput("overview_year_plot"))
+                              ),
+                              tabPanel("Tabular Format",
+                                       tabPanel("Tabular Format", dataTableOutput("overview_year_table"))
+                              )
+                            ) #Close inner tabsetPanel
+                   ),
+                   tabPanel("by Month",
+                            tabsetPanel(
+                              tabPanel("Bar Plot",
+                                       tabPanel("Bar Plot", plotOutput("overview_month_plot"))
+                              ),
+                              tabPanel("Tabular Format",
+                                       tabPanel("Tabular Format", dataTableOutput("overview_month_table"))
+                              )
+                            ) #Close inner tabsetPanel
+                   ),
+                   tabPanel("by Runtime",
+                            tabsetPanel(
+                              tabPanel("Bar Plot",
+                                       tabPanel("Bar Plot", plotOutput("overview_runtime_plot"))
+                              ),
+                              tabPanel("Tabular Format",
+                                       tabPanel("Tabular Format", dataTableOutput("overview_runtime_table"))
+                              )
+                            ) #Close inner tabsetPanel
+                   ),
+                   tabPanel("by Certification",
+                            tabsetPanel(
+                              tabPanel("Bar Plot",
+                                       tabPanel("Bar Plot", plotOutput("overview_certificate_plot"))
+                              ),
+                              tabPanel("Tabular Format",
+                                       tabPanel("Tabular Format", dataTableOutput("overview_certificate_table"))
+                              )
+                            ) #Close inner tabsetPanel
+                   ),
+                   tabPanel("by Genre",
+                            tabsetPanel(
+                              tabPanel("Bar Plot",
+                                       tabPanel("Bar Plot", plotOutput("overview_genre_plot"))
+                              ),
+                              tabPanel("Tabular Format",
+                                       tabPanel("Tabular Format", dataTableOutput("overview_genre_table"))
+                              )
+                            ) #Close inner tabsetPanel
+                   ),
+                   tabPanel("by Top N Keywords",
+                            tabsetPanel(
+                              tabPanel("Bar Plot",
+                                       tabPanel("Bar Plot", plotOutput("overview_top_keywords_plot"))
+                              ),
+                              tabPanel("Tabular Format",
+                                       tabPanel("Tabular Format", dataTableOutput("overview_top_keywords_table"))
+                              )
+                            ) #Close inner tabsetPanel
+                   )
+  
+  
                  )
+              )
+           ),
 
-
-               )
-            )
-
+           fluidRow(
+             infoBoxOutput("info_year"),
+             infoBoxOutput("info_month"),
+             infoBoxOutput("info_runtime")
+           )
         ),
     
     # sizing is weird on these boxes
-    column(2, 
+    # column(3, 
+    #        fluidRow(
+    #            column(12, infoBoxOutput("info_year")),
+    #            column(12, infoBoxOutput("info_month")),
+    #            column(12, infoBoxOutput("info_runtime")),
+    #            column(12, infoBoxOutput("info_total"))
+    #        )
+    # ),
+    column(6,
+           
            fluidRow(
-               column(12, infoBoxOutput("info_year")),
-               column(12, infoBoxOutput("info_month")),
-               column(12, infoBoxOutput("info_runtime")),
-               column(12, infoBoxOutput("info_total"))
-           )
-    ),
-    column(5,
-           box(title = "Distribution of Films by Selected Genre(s)", width = 12, height = 850, solidHeader = TRUE, status = "warning", color = "yellow",
-
-               tabsetPanel(
-                 tabPanel("by Year",
-                          tabsetPanel(
-                            tabPanel("Bar Plot",
-                                     tabPanel("Bar Plot", plotOutput("genre_by_year"))
-                            ),
-                            tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", dataTableOutput("genre_by_year_table"))
-                            )
-                          ) #Close inner tabsetPanel
-                 ),
-                 tabPanel("by Decade",
-                          tabsetPanel(
-                            tabPanel("Bar Plot",
-                                     tabPanel("Bar Plot", plotOutput("genre_by_decade"))
-                            ),
-                            tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", dataTableOutput("genre_by_decade_table"))
-                            )
-                          ) #Close inner tabsetPanel
-                 ),
-                 tabPanel("by Month",
-                          tabsetPanel(
-                            tabPanel("Bar Plot",
-                                     tabPanel("Bar Plot", plotOutput("genre_by_month"))
-                            ),
-                            tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", dataTableOutput("genre_by_month_table"))
-                            )
-                          ) #Close inner tabsetPanel
-                 ),
-                 tabPanel("by Year %",
-                          tabsetPanel(
-                            tabPanel("Bar Plot",
-                                     tabPanel("Bar Plot", plotOutput("genre_by_year_percent"))
-                            ),
-                            tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", dataTableOutput("genre_by_year_percent_table"))
-                            )
-                          ) #Close inner tabsetPanel
-                 ),
-                 tabPanel("by Decade %",
-                          tabsetPanel(
-                            tabPanel("Bar Plot",
-                                     tabPanel("Bar Plot", plotOutput("genre_by_decade_percent"))
-                            ),
-                            tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", dataTableOutput("genre_by_decade_percent_table"))
-                            )
-                          ) #Close inner tabsetPanel
-                 ),
-                 tabPanel("by Month %",
-                          tabsetPanel(
-                            tabPanel("Bar Plot",
-                                     tabPanel("Bar Plot", plotOutput("genre_by_month_percent"))
-                            ),
-                            tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", dataTableOutput("genre_by_month_percent_table"))
-                            )
-                          ) #Close inner tabsetPanel
-                 ),
-                 tabPanel("by Runtime",
-                          tabsetPanel(
-                            tabPanel("Bar Plot",
-                                     tabPanel("Bar Plot", plotOutput("genre_by_runtime"))
-                            ),
-                            tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", dataTableOutput("genre_by_runtime_table"))
-                            )
-                          ) #Close inner tabsetPanel
-                 ),
-                 tabPanel("by Certification",
-                          tabsetPanel(
-                            tabPanel("Bar Plot",
-                                     tabPanel("Bar Plot", plotOutput("genre_by_certificate"))
-                            ),
-                            tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", dataTableOutput("genre_by_certificate_table"))
-                            )
-                          ) #Close inner tabsetPanel
-                 ),
-                 tabPanel("by Top N Keywords",
-                          tabsetPanel(
-                            tabPanel("Bar Plot",
-                                     tabPanel("Bar Plot", plotOutput("genre_by_top_keywords"))
-                            ),
-                            tabPanel("Tabular Format",
-                                     tabPanel("Tabular Format", dataTableOutput("genre_by_top_keywords_table"))
-                            )
-                          ) #Close inner tabsetPanel
+             box(title = "Distribution of Films by Selected Genre(s)", width = 12, height = 750, solidHeader = TRUE, status = "warning", color = "yellow",
+  
+                 tabsetPanel(
+                   tabPanel("by Year",
+                            tabsetPanel(
+                              tabPanel("Bar Plot",
+                                       tabPanel("Bar Plot", plotOutput("genre_by_year"))
+                              ),
+                              tabPanel("Tabular Format",
+                                       tabPanel("Tabular Format", dataTableOutput("genre_by_year_table"))
+                              )
+                            ) #Close inner tabsetPanel
+                   ),
+                   tabPanel("by Decade",
+                            tabsetPanel(
+                              tabPanel("Bar Plot",
+                                       tabPanel("Bar Plot", plotOutput("genre_by_decade"))
+                              ),
+                              tabPanel("Tabular Format",
+                                       tabPanel("Tabular Format", dataTableOutput("genre_by_decade_table"))
+                              )
+                            ) #Close inner tabsetPanel
+                   ),
+                   tabPanel("by Month",
+                            tabsetPanel(
+                              tabPanel("Bar Plot",
+                                       tabPanel("Bar Plot", plotOutput("genre_by_month"))
+                              ),
+                              tabPanel("Tabular Format",
+                                       tabPanel("Tabular Format", dataTableOutput("genre_by_month_table"))
+                              )
+                            ) #Close inner tabsetPanel
+                   ),
+                   tabPanel("by Year %",
+                            tabsetPanel(
+                              tabPanel("Bar Plot",
+                                       tabPanel("Bar Plot", plotOutput("genre_by_year_percent"))
+                              ),
+                              tabPanel("Tabular Format",
+                                       tabPanel("Tabular Format", dataTableOutput("genre_by_year_percent_table"))
+                              )
+                            ) #Close inner tabsetPanel
+                   ),
+                   tabPanel("by Decade %",
+                            tabsetPanel(
+                              tabPanel("Bar Plot",
+                                       tabPanel("Bar Plot", plotOutput("genre_by_decade_percent"))
+                              ),
+                              tabPanel("Tabular Format",
+                                       tabPanel("Tabular Format", dataTableOutput("genre_by_decade_percent_table"))
+                              )
+                            ) #Close inner tabsetPanel
+                   ),
+                   tabPanel("by Month %",
+                            tabsetPanel(
+                              tabPanel("Bar Plot",
+                                       tabPanel("Bar Plot", plotOutput("genre_by_month_percent"))
+                              ),
+                              tabPanel("Tabular Format",
+                                       tabPanel("Tabular Format", dataTableOutput("genre_by_month_percent_table"))
+                              )
+                            ) #Close inner tabsetPanel
+                   ),
+                   tabPanel("by Runtime",
+                            tabsetPanel(
+                              tabPanel("Bar Plot",
+                                       tabPanel("Bar Plot", plotOutput("genre_by_runtime"))
+                              ),
+                              tabPanel("Tabular Format",
+                                       tabPanel("Tabular Format", dataTableOutput("genre_by_runtime_table"))
+                              )
+                            ) #Close inner tabsetPanel
+                   ),
+                   tabPanel("by Certification",
+                            tabsetPanel(
+                              tabPanel("Bar Plot",
+                                       tabPanel("Bar Plot", plotOutput("genre_by_certificate"))
+                              ),
+                              tabPanel("Tabular Format",
+                                       tabPanel("Tabular Format", dataTableOutput("genre_by_certificate_table"))
+                              )
+                            ) #Close inner tabsetPanel
+                   ),
+                   tabPanel("by Top N Keywords",
+                            tabsetPanel(
+                              tabPanel("Bar Plot",
+                                       tabPanel("Bar Plot", plotOutput("genre_by_top_keywords"))
+                              ),
+                              tabPanel("Tabular Format",
+                                       tabPanel("Tabular Format", dataTableOutput("genre_by_top_keywords_table"))
+                              )
+                            ) #Close inner tabsetPanel
+                   )
+  
+  
                  )
-
-
-               )
+             )
+           ),
+           fluidRow(
+             infoBoxOutput("info_total")
            )
 
     ),
@@ -436,10 +450,10 @@ server = function(input, output, session) {
     )
   })
 
-  ### TOTAL FILMS FOR CURRENT FILTERS (shows just overall data count now)
+  # initially shows just overall data count
   output$info_total <- renderInfoBox({
     infoBox(
-      "Total:", paste0(unique_films, " films"), icon = icon("fas fa-film"),
+      "Current Total:", paste0(unique_films, " films"), icon = icon("fas fa-film"),
       color = "yellow", fill = TRUE
     )
   })
@@ -505,6 +519,15 @@ server = function(input, output, session) {
       } else {
           
           filtered_data = getMoviesFromFilter(unique_movies, keywords_subset, input$input_keyword, input$input_genre, input$input_runtime, input$input_certificate)
+          
+          ### TOTAL FILMS FOR CURRENT FILTERS
+          unique_films_filtered <- length(unique(filtered_data$movie))
+          output$info_total <- renderInfoBox({
+            infoBox(
+              "Current Total:", paste0(unique_films_filtered, " films"), icon = icon("fas fa-film"),
+              color = "yellow", fill = TRUE
+            )
+          })
           
           if (year_on()){
               ###################### Update Plots ##############

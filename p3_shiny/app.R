@@ -382,6 +382,7 @@ ui = dashboardPage(skin = "yellow",
              )
            ),
            fluidRow(
+             infoBoxOutput(""),
              infoBoxOutput("info_total")
            )
 
